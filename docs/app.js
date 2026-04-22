@@ -460,27 +460,42 @@ async function processAudioV2() {
 
 // ─── Parseo y renderizado de la nota SOAP ────────────────────────────────────
 
-function parseAndRenderSoap(jsonStr) {
-  // Limpiar posibles bloques de código markdown que el LLM haya incluido a pesar del prompt
-  let clean = jsonStr
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```\s*$/, "")
-    .trim();
+function tryParseJSON(str) {
+  try { return JSON.parse(str.trim()); } catch { return null; }
+}
 
-  // Encontrar el JSON dentro del string (por si hay texto extra)
-  const firstBrace = clean.indexOf("{");
-  const lastBrace = clean.lastIndexOf("}");
-  if (firstBrace !== -1 && lastBrace !== -1) {
-    clean = clean.slice(firstBrace, lastBrace + 1);
+function parseAndRenderSoap(jsonStr) {
+  if (!jsonStr || jsonStr.trim().length < 10) {
+    showScreen("record");
+    showError("No se recibió respuesta del servidor. Intenta de nuevo.");
+    return;
   }
 
-  let nota;
-  try {
-    nota = JSON.parse(clean);
-  } catch {
+  // Intento 1: parseo directo
+  let nota = tryParseJSON(jsonStr);
+
+  // Intento 2: quitar markdown fences (```json ... ```)
+  if (!nota) {
+    const stripped = jsonStr
+      .replace(/^[\s\S]*?```(?:json)?\s*/i, "")
+      .replace(/\s*```[\s\S]*$/i, "")
+      .trim();
+    nota = tryParseJSON(stripped);
+  }
+
+  // Intento 3: extraer desde la primera { hasta la última }
+  if (!nota) {
+    const first = jsonStr.indexOf("{");
+    const last = jsonStr.lastIndexOf("}");
+    if (first !== -1 && last > first) {
+      nota = tryParseJSON(jsonStr.slice(first, last + 1));
+    }
+  }
+
+  if (!nota) {
     showScreen("record");
-    showError("La nota generada no tiene formato válido. Intenta de nuevo o graba más claro.");
-    console.error("JSON inválido:", clean);
+    showError("La nota generada no tiene formato válido. Intenta de nuevo.");
+    console.error("JSON inválido recibido:", jsonStr.slice(0, 300));
     return;
   }
 

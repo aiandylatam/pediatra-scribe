@@ -148,8 +148,9 @@ async function* generateSoapStream(transcripcion, apiKey) {
         },
       ],
       stream: true,
-      temperature: 0.1, // Bajo para reproducibilidad clínica
+      temperature: 0.1,
       max_tokens: 2048,
+      response_format: { type: "json_object" }, // Fuerza JSON puro, sin markdown
     }),
   });
 
