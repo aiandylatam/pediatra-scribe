@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head><title>Generador de iconos</title></head>
+<body>
+<p>Abre esta página en el navegador, espera que aparezcan los enlaces de descarga, y guarda los dos archivos en esta misma carpeta <code>icons/</code>.</p>
+<div id="out"></div>
+<script>
+const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0f766e"/>
+  <circle cx="168" cy="148" r="28" fill="none" stroke="white" stroke-width="20"/>
+  <circle cx="344" cy="148" r="28" fill="none" stroke="white" stroke-width="20"/>
+  <path d="M168 176 C168 240 200 270 256 270 C312 270 344 240 344 176"
+        fill="none" stroke="white" stroke-width="20" stroke-linecap="round"/>
+  <line x1="256" y1="270" x2="256" y2="340" stroke="white" stroke-width="20" stroke-linecap="round"/>
+  <circle cx="256" cy="372" r="52" fill="none" stroke="white" stroke-width="20"/>
+  <circle cx="256" cy="372" r="22" fill="white" opacity="0.4"/>
+  <rect x="244" y="356" width="24" height="32" rx="4" fill="white"/>
+  <rect x="240" y="360" width="32" height="24" rx="4" fill="white"/>
+</svg>`;
+
+function svgToPng(svgStr, size, filename) {
+  return new Promise(resolve => {
+    const blob = new Blob([svgStr], {type: 'image/svg+xml'});
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, size, size);
+      canvas.toBlob(pngBlob => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(pngBlob);
+        a.download = filename;
+        a.textContent = `⬇ Descargar ${filename}`;
+        a.style = 'display:block;margin:10px;font-size:18px;';
+        document.getElementById('out').appendChild(a);
+        resolve();
+      }, 'image/png');
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  });
+}
+
+(async () => {
+  await svgToPng(svgContent, 192, 'icon-192.png');
+  await svgToPng(svgContent, 512, 'icon-512.png');
+  document.getElementById('out').insertAdjacentHTML('afterbegin',
+    '<p style="color:green;font-weight:bold">✓ Listo. Descarga los dos archivos arriba y guárdalos aquí en icons/</p>');
+})();
+</script>
+</body>
+</html>

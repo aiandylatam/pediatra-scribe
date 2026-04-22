@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Fondo redondeado -->
+  <rect width="512" height="512" rx="96" fill="#0f766e"/>
+
+  <!-- Estetoscopio estilizado -->
+  <!-- Auricular izquierdo -->
+  <circle cx="168" cy="148" r="28" fill="none" stroke="white" stroke-width="20"/>
+  <!-- Auricular derecho -->
+  <circle cx="344" cy="148" r="28" fill="none" stroke="white" stroke-width="20"/>
+
+  <!-- Tubo del estetoscopio -->
+  <path d="M168 176 C168 240 200 270 256 270 C312 270 344 240 344 176"
+        fill="none" stroke="white" stroke-width="20" stroke-linecap="round"/>
+
+  <!-- Tubo vertical -->
+  <line x1="256" y1="270" x2="256" y2="340" stroke="white" stroke-width="20" stroke-linecap="round"/>
+
+  <!-- Campana del estetoscopio -->
+  <circle cx="256" cy="372" r="52" fill="none" stroke="white" stroke-width="20"/>
+  <circle cx="256" cy="372" r="22" fill="white" opacity="0.4"/>
+
+  <!-- Cruz médica pequeña -->
+  <rect x="244" y="356" width="24" height="32" rx="4" fill="white"/>
+  <rect x="240" y="360" width="32" height="24" rx="4" fill="white"/>
+</svg>

@@ -1,0 +1,124 @@
+/* ══════════════════════════════════════════════
+   Pediatra Scribe — estilos complementarios
+   (Tailwind cubre la mayor parte)
+═══════════════════════════════════════════════ */
+
+/* ─── Pantallas ──────────────────────────────── */
+.screen {
+  display: flex;
+}
+.screen.hidden {
+  display: none !important;
+}
+
+/* ─── Botón de grabación ─────────────────────── */
+.record-btn {
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.record-btn.recording {
+  background-color: #dc2626; /* red-600 */
+  box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.5);
+  animation: pulse-ring 1.4s ease-out infinite;
+}
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.45); }
+  70%  { box-shadow: 0 0 0 22px rgba(220, 38, 38, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+
+/* ─── Visualizador de audio ──────────────────── */
+.viz-bar {
+  width: 6px;
+  min-height: 4px;
+  height: 4px;
+  background: #0d9488; /* teal-600 */
+  border-radius: 3px;
+  transition: height 0.08s ease;
+}
+
+/* ─── Secciones SOAP ─────────────────────────── */
+.soap-section {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.soap-letter {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 13px;
+  margin-top: 2px;
+}
+.soap-letter.s { background: #dbeafe; color: #1d4ed8; }
+.soap-letter.o { background: #dcfce7; color: #15803d; }
+.soap-letter.a { background: #fef3c7; color: #b45309; }
+.soap-letter.p { background: #f3e8ff; color: #7c3aed; }
+
+.soap-content {
+  flex: 1;
+  min-width: 0;
+}
+.soap-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8; /* slate-400 */
+}
+.soap-value {
+  font-size: 14px;
+  color: #334155; /* slate-700 */
+  line-height: 1.55;
+  margin-top: 2px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.soap-value.no-consignado {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* ─── Feedback "Copiado" ─────────────────────── */
+.btn-copied {
+  background-color: #16a34a !important; /* green-600 */
+}
+
+/* ─── Toast de error ─────────────────────────── */
+#error-toast {
+  animation: slide-up 0.25s ease;
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translate(-50%, 20px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ─── Scrollbar fina (webkit) ────────────────── */
+#soap-preview::-webkit-scrollbar,
+#transcripcion-texto::-webkit-scrollbar {
+  width: 4px;
+}
+#soap-preview::-webkit-scrollbar-track,
+#transcripcion-texto::-webkit-scrollbar-track {
+  background: transparent;
+}
+#soap-preview::-webkit-scrollbar-thumb,
+#transcripcion-texto::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* ─── Safari iOS: quitar highlight táctil ────── */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ─── Evitar doble tap zoom en botones ────────── */
+button {
+  touch-action: manipulation;
+}

@@ -1,0 +1,33 @@
+{
+  "name": "Pediatra Scribe",
+  "short_name": "PScribe",
+  "description": "Graba tu consulta y recibe la nota SOAP al instante.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0f766e",
+  "background_color": "#f8fafc",
+  "lang": "es-MX",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nueva consulta",
+      "url": "./index.html",
+      "description": "Comenzar a grabar una nueva consulta"
+    }
+  ],
+  "categories": ["medical", "productivity"]
+}

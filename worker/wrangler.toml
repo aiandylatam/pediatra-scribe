@@ -1,0 +1,17 @@
+name = "pediatra-scribe-api"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+ENVIRONMENT = "development"
+# ALLOWED_ORIGIN se actualiza con la URL de GitHub Pages en Fase 5
+# Ejemplo: ALLOWED_ORIGIN = "https://tu-usuario.github.io"
+ALLOWED_ORIGIN = "*"
+# URL del Worker desplegado: https://pediatra-scribe-api.lucandres.workers.dev
+
+# Para produccion, agrega:
+# [env.production.vars]
+# ALLOWED_ORIGIN = "https://TU-USUARIO.github.io"
+#
+# GROQ_API_KEY se agrega como secret (nunca en este archivo):
+# wrangler secret put GROQ_API_KEY
