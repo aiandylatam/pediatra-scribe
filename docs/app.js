@@ -572,6 +572,7 @@ function buildPlainText(nota) {
   const nc = (v) => v || "No consignado";
 
   return `NOTA DE CONSULTA PEDIÁTRICA
+Médico: Dra. Yazbek Velazco — Pediatría
 Fecha: ${nc(nota.fecha_aproximada)}
 
 PACIENTE

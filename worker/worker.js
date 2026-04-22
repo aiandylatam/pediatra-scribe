@@ -10,8 +10,12 @@ const MAX_RETRIES = 3;
 
 // ─── Prompt clínico ──────────────────────────────────────────────────────────
 
+const DOCTOR_NAME = "Dra. Yazbek Velazco";
+const DOCTOR_SPECIALTY = "Pediatría";
+
 const SYSTEM_PROMPT = `Eres un asistente clínico que convierte transcripciones de consultas pediátricas
 en español al formato de nota SOAP del expediente clínico mexicano (NOM-004-SSA3-2012).
+El médico tratante es ${DOCTOR_NAME}, especialista en ${DOCTOR_SPECIALTY}.
 
 REGLAS CRÍTICAS:
 1. NO inventes datos. Si un dato no fue mencionado en la transcripción, escribe
@@ -27,6 +31,7 @@ REGLAS CRÍTICAS:
 
 ESTRUCTURA DE SALIDA OBLIGATORIA:
 {
+  "medico": "Dra. Yazbek Velazco — Pediatría",
   "fecha_aproximada": "string — fecha si se mencionó, si no 'No consignado'",
   "paciente": {
     "nombre": "string o 'No consignado'",
