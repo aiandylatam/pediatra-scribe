@@ -6,7 +6,7 @@ compatibility_date = "2024-01-01"
 ENVIRONMENT = "development"
 # ALLOWED_ORIGIN se actualiza con la URL de GitHub Pages en Fase 5
 # Ejemplo: ALLOWED_ORIGIN = "https://tu-usuario.github.io"
-ALLOWED_ORIGIN = "*"
+ALLOWED_ORIGIN = "https://aiandylatam.github.io"
 # URL del Worker desplegado: https://pediatra-scribe-api.lucandres.workers.dev
 
 # Para produccion, agrega:

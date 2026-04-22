@@ -113,7 +113,7 @@ En GitHub:
 3. Branch: `main` / Folder: `/frontend`
 4. Guardar → esperar 1–2 minutos
 
-Tu URL será: `https://TU-USUARIO.github.io/pediatra-scribe/`
+Tu URL será: `https://aiandylatam.github.io/pediatra-scribe/`
 
 ### 6. Configurar CORS en el Worker
 
