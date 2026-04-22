@@ -10,7 +10,7 @@ const MAX_RETRIES = 3;
 
 // ─── Prompt clínico ──────────────────────────────────────────────────────────
 
-const DOCTOR_NAME = "Dra. Yazbek Velazco";
+const DOCTOR_NAME = "Dr. Yazbek Velazco";
 const DOCTOR_SPECIALTY = "Pediatría";
 
 const SYSTEM_PROMPT = `Eres un asistente clínico que convierte transcripciones de consultas pediátricas
@@ -31,7 +31,7 @@ REGLAS CRÍTICAS:
 
 ESTRUCTURA DE SALIDA OBLIGATORIA:
 {
-  "medico": "Dra. Yazbek Velazco — Pediatría",
+  "medico": "Dr. Yazbek Velazco — Pediatría",
   "fecha_aproximada": "string — fecha si se mencionó, si no 'No consignado'",
   "paciente": {
     "nombre": "string o 'No consignado'",
