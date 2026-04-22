@@ -134,9 +134,9 @@ async function transcribeAudio(audioBlob, apiKey) {
   return transcripcion.trim();
 }
 
-// ─── Generación SOAP con Llama (streaming) ───────────────────────────────────
+// ─── Generación SOAP con Llama (respuesta completa, no streaming) ────────────
 
-async function* generateSoapStream(transcripcion, apiKey) {
+async function generateSoap(transcripcion, apiKey) {
   const res = await fetchWithRetry(`${GROQ_API_BASE}/chat/completions`, {
     method: "POST",
     headers: {
@@ -152,10 +152,10 @@ async function* generateSoapStream(transcripcion, apiKey) {
           content: `Transcripción de la consulta:\n\n${transcripcion}`,
         },
       ],
-      stream: true,
+      stream: false,
       temperature: 0.1,
       max_tokens: 2048,
-      response_format: { type: "json_object" }, // Fuerza JSON puro, sin markdown
+      response_format: { type: "json_object" },
     }),
   });
 
@@ -167,30 +167,10 @@ async function* generateSoapStream(transcripcion, apiKey) {
     throw new Error(`LLAMA_ERROR: ${res.status} — ${errText}`);
   }
 
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    const chunk = decoder.decode(value, { stream: true });
-    const lines = chunk.split("\n");
-
-    for (const line of lines) {
-      if (!line.startsWith("data: ")) continue;
-      const data = line.slice(6).trim();
-      if (data === "[DONE]") return;
-
-      try {
-        const parsed = JSON.parse(data);
-        const token = parsed.choices?.[0]?.delta?.content;
-        if (token) yield token;
-      } catch {
-        // Ignorar líneas malformadas del stream
-      }
-    }
-  }
+  const data = await res.json();
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) throw new Error("LLAMA_ERROR: Respuesta vacía del modelo.");
+  return content;
 }
 
 // ─── Handler principal ───────────────────────────────────────────────────────
@@ -277,11 +257,10 @@ export default {
         const transcripcion = await transcribeAudio(audioFile, env.GROQ_API_KEY);
         await write("transcripcion", { texto: transcripcion });
 
-        // Fase 2: Generación SOAP (streaming)
+        // Fase 2: Generación SOAP (respuesta completa)
         await write("status", { mensaje: "Generando nota clínica..." });
-        for await (const token of generateSoapStream(transcripcion, env.GROQ_API_KEY)) {
-          await write("soap_token", { token });
-        }
+        const soapJson = await generateSoap(transcripcion, env.GROQ_API_KEY);
+        await write("soap_complete", { json: soapJson });
 
         await write("done", { ok: true });
       } catch (err) {

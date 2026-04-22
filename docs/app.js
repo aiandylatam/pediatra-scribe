@@ -395,8 +395,6 @@ async function processAudioV2() {
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let raw = "";
-  let soapAccum = "";
-  let currentEvent = "";
 
   try {
     while (true) {
@@ -427,17 +425,11 @@ async function processAudioV2() {
         } else if (evtName === "transcripcion") {
           state.transcripcion = parsed.texto || "";
           $("transcripcion-texto").textContent = state.transcripcion;
-        } else if (evtName === "soap_token") {
-          soapAccum += parsed.token || "";
-          // Mostrar preview mientras se genera
-          if (!soapPreviewContainer.classList.contains("hidden") === false) {
-            soapPreviewContainer.classList.remove("hidden");
-          }
-          soapPreview.textContent = soapAccum;
-          soapPreview.scrollTop = soapPreview.scrollHeight;
+        } else if (evtName === "soap_complete") {
+          // JSON completo recibido de una vez — sin acumulación de tokens
+          parseAndRenderSoap(parsed.json || "");
+          return;
         } else if (evtName === "done") {
-          // Parsear SOAP acumulado
-          parseAndRenderSoap(soapAccum.trim());
           return;
         } else if (evtName === "error") {
           showScreen("record");
@@ -450,11 +442,6 @@ async function processAudioV2() {
     showScreen("record");
     showError("Error al recibir la respuesta. Intenta de nuevo.");
     return;
-  }
-
-  // Si el stream terminó sin evento "done", intentar parsear lo acumulado
-  if (soapAccum.trim()) {
-    parseAndRenderSoap(soapAccum.trim());
   }
 }
 
