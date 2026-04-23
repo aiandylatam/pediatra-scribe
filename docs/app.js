@@ -1,5 +1,5 @@
 /**
- * Pediatra Scribe — app.js
+ * Escribano del Pediatra — app.js
  * Lógica completa: grabación, visualizador, llamada al Worker SSE, renderizado SOAP.
  *
  * IMPORTANTE: Cambia WORKER_URL por la URL de tu Cloudflare Worker desplegado.

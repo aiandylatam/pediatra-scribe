@@ -1,5 +1,5 @@
 /**
- * Pediatra Scribe — Cloudflare Worker
+ * Escribano del Pediatra — Cloudflare Worker
  * Pipeline: audio → Groq Whisper (transcripción) → Groq Llama 3.3 70B (nota SOAP)
  * Responde con SSE para streaming de la nota al frontend.
  */

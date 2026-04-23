@@ -1,5 +1,5 @@
 /**
- * Pediatra Scribe — Service Worker mínimo
+ * Escribano del Pediatra — Service Worker mínimo
  * Estrategia: Cache-first para el shell de la app (offline-ready).
  *             Network-only para llamadas al Worker de Cloudflare.
  */

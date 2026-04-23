@@ -1,5 +1,5 @@
 {
-  "name": "Pediatra Scribe",
+  "name": "Escribano del Pediatra",
   "short_name": "PScribe",
   "description": "Graba tu consulta y recibe la nota SOAP al instante.",
   "start_url": "./index.html",

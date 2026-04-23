@@ -1,4 +1,4 @@
-# Pediatra Scribe
+# Escribano del Pediatra
 
 Graba una consulta pediátrica → recibe la nota SOAP lista para copiar.
 
