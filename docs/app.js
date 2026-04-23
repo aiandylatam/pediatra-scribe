@@ -358,7 +358,7 @@ function processSSEBuffer(rawBuffer) {
   // Se llama con el buffer acumulado completo
 }
 
-// Rediseño del consumer SSE más robusto
+// Procesamiento: POST simple → JSON response (sin SSE)
 async function processAudioV2() {
   if (!state.audioBlob) {
     showError("No hay audio grabado. Graba primero.");
@@ -366,8 +366,6 @@ async function processAudioV2() {
   }
 
   showScreen("processing");
-  soapPreviewContainer.classList.add("hidden");
-  soapPreview.textContent = "";
   processingStatus.textContent = "Transcribiendo audio...";
   state.transcripcion = "";
   state.notaJson = null;
@@ -375,74 +373,36 @@ async function processAudioV2() {
   const formData = new FormData();
   formData.append("audio", state.audioBlob, "consulta.webm");
 
-  let response;
+  // Cambiar mensaje a mitad del tiempo estimado
+  const statusTimer = setTimeout(() => {
+    processingStatus.textContent = "Generando nota clínica...";
+  }, 6000);
+
+  let data;
   try {
-    response = await fetch(WORKER_URL, { method: "POST", body: formData });
+    const response = await fetch(WORKER_URL, { method: "POST", body: formData });
+    data = await response.json();
   } catch {
+    clearTimeout(statusTimer);
     showScreen("record");
     showError("No se pudo conectar al servidor. Verifica tu conexión a internet.");
     return;
   }
 
-  if (!response.ok) {
-    let errMsg = "Error en el servidor.";
-    try { const j = await response.json(); errMsg = j.error || errMsg; } catch {}
+  clearTimeout(statusTimer);
+
+  if (!data.ok) {
     showScreen("record");
-    showError(errMsg, 8000);
+    showError(data.error || "Error en el servidor.", 8000);
     return;
   }
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let raw = "";
+  // Guardar transcripción
+  state.transcripcion = data.transcripcion || "";
+  $("transcripcion-texto").textContent = state.transcripcion;
 
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      raw += decoder.decode(value, { stream: true });
-
-      // Procesar todos los mensajes completos (separados por \n\n)
-      let boundary;
-      while ((boundary = raw.indexOf("\n\n")) !== -1) {
-        const block = raw.slice(0, boundary);
-        raw = raw.slice(boundary + 2);
-
-        let evtName = "";
-        let evtData = "";
-
-        for (const line of block.split("\n")) {
-          if (line.startsWith("event: ")) evtName = line.slice(7).trim();
-          else if (line.startsWith("data: ")) evtData = line.slice(6).trim();
-        }
-
-        if (!evtData) continue;
-        let parsed;
-        try { parsed = JSON.parse(evtData); } catch { continue; }
-
-        if (evtName === "status") {
-          processingStatus.textContent = parsed.mensaje || "";
-        } else if (evtName === "transcripcion") {
-          state.transcripcion = parsed.texto || "";
-          $("transcripcion-texto").textContent = state.transcripcion;
-        } else if (evtName === "soap_complete") {
-          // JSON completo recibido de una vez — sin acumulación de tokens
-          parseAndRenderSoap(parsed.json || "");
-          return;
-        } else if (evtName === "done") {
-          return;
-        } else if (evtName === "error") {
-          showScreen("record");
-          showError(parsed.mensaje || "Error desconocido.", 8000);
-          return;
-        }
-      }
-    }
-  } catch {
-    showScreen("record");
-    showError("Error al recibir la respuesta. Intenta de nuevo.");
-    return;
-  }
+  // Parsear y mostrar nota SOAP
+  parseAndRenderSoap(data.soap || "");
 }
 
 // ─── Parseo y renderizado de la nota SOAP ────────────────────────────────────

@@ -234,57 +234,27 @@ export default {
       );
     }
 
-    // ── Pipeline: Whisper → Llama (SSE) ──────────────────────────────────────
+    // ── Pipeline: Whisper → Llama → JSON response ────────────────────────────
+    try {
+      const transcripcion = await transcribeAudio(audioFile, env.GROQ_API_KEY);
+      const soapJson = await generateSoap(transcripcion, env.GROQ_API_KEY);
 
-    // Usamos SSE para enviar:
-    // 1. event: transcripcion  → texto completo de la transcripción
-    // 2. event: soap_token     → tokens del JSON SOAP (streaming)
-    // 3. event: done           → señal de fin
-    // 4. event: error          → mensaje de error legible
+      return new Response(
+        JSON.stringify({ ok: true, transcripcion, soap: soapJson }),
+        { headers: { "Content-Type": "application/json", ...corsHeaders(env, request) } }
+      );
+    } catch (err) {
+      const msg = err.message || "Error interno del servidor.";
+      const legible = msg.startsWith("RATE_LIMIT:")
+        ? msg.replace("RATE_LIMIT:", "").trim()
+        : msg.startsWith("EMPTY_TRANSCRIPTION:")
+        ? "No se detectó voz en el audio. Verifica que el micrófono esté cerca y vuelve a intentar."
+        : "Ocurrió un error al procesar la consulta. Intenta de nuevo.";
 
-    const { readable, writable } = new TransformStream();
-    const writer = writable.getWriter();
-    const encoder = new TextEncoder();
-
-    const write = (eventName, data) =>
-      writer.write(encoder.encode(`event: ${eventName}\ndata: ${JSON.stringify(data)}\n\n`));
-
-    // Procesar en background (no bloquea la respuesta SSE)
-    (async () => {
-      try {
-        // Fase 1: Transcripción
-        await write("status", { mensaje: "Transcribiendo audio..." });
-        const transcripcion = await transcribeAudio(audioFile, env.GROQ_API_KEY);
-        await write("transcripcion", { texto: transcripcion });
-
-        // Fase 2: Generación SOAP (respuesta completa)
-        await write("status", { mensaje: "Generando nota clínica..." });
-        const soapJson = await generateSoap(transcripcion, env.GROQ_API_KEY);
-        await write("soap_complete", { json: soapJson });
-
-        await write("done", { ok: true });
-      } catch (err) {
-        const msg = err.message || "Error interno del servidor.";
-        // Mensajes legibles para el médico
-        const legible = msg.startsWith("RATE_LIMIT:")
-          ? msg.replace("RATE_LIMIT:", "").trim()
-          : msg.startsWith("EMPTY_TRANSCRIPTION:")
-          ? "No se detectó voz en el audio. Verifica que el micrófono esté cerca y vuelve a intentar."
-          : "Ocurrió un error al procesar la consulta. Intenta de nuevo.";
-
-        await write("error", { mensaje: legible, detalle: msg }).catch(() => {});
-      } finally {
-        await writer.close().catch(() => {});
-      }
-    })();
-
-    return new Response(readable, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-        ...corsHeaders(env, request),
-      },
-    });
+      return new Response(
+        JSON.stringify({ ok: false, error: legible }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders(env, request) } }
+      );
+    }
   },
 };
