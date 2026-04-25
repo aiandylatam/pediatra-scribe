@@ -667,7 +667,7 @@ const setRecUI = on => {
   const tag   = $('rec-tag');
   if (on) {
     title.innerHTML = 'Escuchando<br/>cada palabra.';
-    lede.textContent = 'Tu voz se transcribe en la nube. Nada se guarda hasta que finalices.';
+    lede.textContent = 'El audio se procesa al terminar y se descarta de inmediato. Nunca se almacena.';
     hint.textContent = 'TOCA PARA FINALIZAR';
     tag.textContent = 'GRABANDO';
   } else {
