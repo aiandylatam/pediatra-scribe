@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Escribano Pediátrico — Luciana</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Variables de marca Luciana ── */
+    :root {
+      --navy:      #1A4F82;
+      --navy-deep: #0F3259;
+      --coral:     #E85D3A;
+      --cream:     #F7F4EE;
+      --gray-100:  #F3F4F6;
+      --gray-300:  #D1D5DB;
+      --gray-500:  #6B7280;
+      --gray-700:  #374151;
+      --white:     #FFFFFF;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--gray-700);
+      min-height: 100vh;
+    }
+
+    /* ══ PANTALLA 1 — PEGAR NOTA ══ */
+    #screen-paste {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      background: var(--navy-deep);
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .header-logo { display: flex; align-items: center; gap: 12px; }
+    .header-wordmark {
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-size: 22px;
+      color: var(--cream);
+      letter-spacing: -0.3px;
+    }
+    .header-wordmark span { color: var(--coral); }
+    .header-divider { width: 1px; height: 24px; background: rgba(247,244,238,0.2); margin: 0 4px; }
+    .header-product {
+      font-size: 13px;
+      color: rgba(247,244,238,0.6);
+      font-weight: 400;
+      letter-spacing: 0.02em;
+    }
+
+    /* Hero */
+    .hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 24px;
+      gap: 32px;
+      max-width: 720px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .hero-mark {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .hero-title {
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-size: 36px;
+      color: var(--navy-deep);
+      text-align: center;
+      line-height: 1.15;
+    }
+    .hero-title span { color: var(--coral); }
+    .hero-sub {
+      font-size: 16px;
+      color: var(--gray-500);
+      text-align: center;
+      max-width: 480px;
+      line-height: 1.6;
+    }
+
+    /* Zona de pegado */
+    .paste-zone {
+      width: 100%;
+      background: var(--white);
+      border: 2px dashed var(--gray-300);
+      border-radius: 16px;
+      padding: 8px;
+      transition: border-color 0.2s;
+    }
+    .paste-zone:focus-within {
+      border-color: var(--navy);
+      border-style: solid;
+    }
+    #nota-input {
+      width: 100%;
+      min-height: 220px;
+      border: none;
+      outline: none;
+      resize: vertical;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      line-height: 1.7;
+      color: var(--gray-700);
+      padding: 16px;
+      background: transparent;
+    }
+    #nota-input::placeholder { color: var(--gray-300); }
+
+    .paste-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 8px 8px 16px;
+      border-top: 1px solid var(--gray-100);
+    }
+    .paste-hint {
+      font-size: 12px;
+      color: var(--gray-300);
+      font-family: 'JetBrains Mono', monospace;
+      flex: 1;
+    }
+    .btn-primary {
+      background: var(--coral);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 11px 24px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .btn-primary:hover { background: #d44f2e; }
+    .btn-primary:active { transform: scale(0.97); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--gray-500);
+      border: 1px solid var(--gray-300);
+      border-radius: 10px;
+      padding: 9px 18px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-ghost:hover { border-color: var(--navy); color: var(--navy); }
+
+    /* Error */
+    .error-msg {
+      display: none;
+      color: var(--coral);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    /* Footer pantalla 1 */
+    .footer-brand {
+      text-align: center;
+      padding: 24px;
+      font-size: 12px;
+      color: var(--gray-300);
+    }
+    .footer-brand a { color: var(--navy); text-decoration: none; }
+
+    /* ══ PANTALLA 2 — DOCUMENTO ══ */
+    #screen-doc {
+      display: none;
+      min-height: 100vh;
+      background: var(--gray-100);
+    }
+
+    /* Toolbar */
+    .toolbar {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-300);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .toolbar-logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 16px;
+      color: var(--navy-deep);
+      margin-right: 8px;
+    }
+    .toolbar-logo span { color: var(--coral); }
+    .toolbar-sep { flex: 1; }
+    .btn-print {
+      background: var(--navy);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 20px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: background 0.15s;
+    }
+    .btn-print:hover { background: var(--navy-deep); }
+    .btn-back {
+      background: transparent;
+      color: var(--gray-500);
+      border: 1px solid var(--gray-300);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-back:hover { color: var(--navy); border-color: var(--navy); }
+    .edit-hint {
+      font-size: 12px;
+      color: var(--gray-300);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Hoja del documento */
+    .doc-wrapper {
+      padding: 40px 24px 80px;
+      display: flex;
+      justify-content: center;
+    }
+    .doc-page {
+      background: var(--white);
+      width: 100%;
+      max-width: 760px;
+      min-height: 1040px;
+      border-radius: 4px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 56px 64px;
+    }
+
+    /* Membrete del documento */
+    .doc-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding-bottom: 24px;
+      border-bottom: 2.5px solid var(--navy);
+      margin-bottom: 28px;
+      gap: 20px;
+    }
+    .doc-doctor-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: var(--navy-deep);
+      outline: none;
+      min-width: 100px;
+    }
+    .doc-doctor-name:focus { background: #f0f4ff; border-radius: 4px; }
+    .doc-doctor-meta {
+      font-size: 12px;
+      color: var(--gray-500);
+      line-height: 1.8;
+      margin-top: 4px;
+    }
+    .doc-doctor-meta [contenteditable] {
+      outline: none;
+      display: block;
+    }
+    .doc-doctor-meta [contenteditable]:focus { background: #f0f4ff; border-radius: 3px; }
+
+    /* Logo Luciana en documento */
+    .doc-luciana-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+    .doc-luciana-badge svg { width: 36px; height: 36px; }
+    .doc-luciana-label {
+      font-size: 9px;
+      color: var(--gray-300);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Título de la nota */
+    .doc-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 17px;
+      color: var(--navy-deep);
+      margin-bottom: 4px;
+      letter-spacing: 0.01em;
+    }
+    .doc-fecha {
+      font-size: 12px;
+      color: var(--gray-500);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 24px;
+      outline: none;
+    }
+    .doc-fecha:focus { background: #f0f4ff; border-radius: 3px; }
+
+    /* Paciente */
+    .doc-paciente-box {
+      background: var(--cream);
+      border-left: 3px solid var(--navy);
+      border-radius: 0 8px 8px 0;
+      padding: 12px 16px;
+      margin-bottom: 28px;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+    .doc-paciente-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--navy);
+      margin-bottom: 6px;
+    }
+    .doc-paciente-box [contenteditable] { outline: none; }
+    .doc-paciente-box [contenteditable]:focus { background: rgba(26,79,130,0.06); border-radius: 3px; }
+
+    /* Secciones SOAP */
+    .soap-section { margin-bottom: 24px; }
+
+    .soap-heading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .soap-letter {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    .soap-letter.s { background: #dbeafe; color: #1d4ed8; }
+    .soap-letter.o { background: #dcfce7; color: #15803d; }
+    .soap-letter.a { background: #fef3c7; color: #b45309; }
+    .soap-letter.p { background: #f3e8ff; color: #7c3aed; }
+
+    .soap-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gray-500);
+    }
+    .soap-divider {
+      flex: 1;
+      height: 1px;
+      background: var(--gray-100);
+    }
+
+    .soap-fields { display: flex; flex-direction: column; gap: 10px; padding-left: 36px; }
+
+    .soap-field-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--gray-300);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .soap-field-value {
+      font-size: 14px;
+      color: var(--gray-700);
+      line-height: 1.65;
+      outline: none;
+      min-height: 20px;
+      border-radius: 3px;
+      padding: 2px 4px;
+      margin: -2px -4px;
+    }
+    .soap-field-value:focus { background: #f0f4ff; }
+    .soap-field-value.no-consignado { color: var(--gray-300); font-style: italic; }
+
+    /* Notas adicionales */
+    .doc-notas-extra {
+      margin-top: 8px;
+      padding: 12px 16px;
+      background: #fffbeb;
+      border-radius: 8px;
+      border: 1px solid #fde68a;
+      font-size: 13px;
+      color: #92400e;
+    }
+
+    /* Footer del documento */
+    .doc-footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid var(--gray-100);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .doc-footer-disclaimer {
+      font-size: 9px;
+      color: var(--gray-300);
+      font-family: 'JetBrains Mono', monospace;
+      max-width: 400px;
+      line-height: 1.6;
+    }
+    .doc-footer-luciana {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .doc-footer-luciana svg { width: 18px; height: 18px; }
+    .doc-footer-luciana-text {
+      font-family: 'DM Serif Display', serif;
+      font-size: 11px;
+      color: var(--navy);
+    }
+    .doc-footer-luciana-text span { color: var(--coral); }
+
+    /* ══ PRINT STYLES ══ */
+    @media print {
+      body { background: white; }
+      .toolbar { display: none !important; }
+      #screen-paste { display: none !important; }
+      #screen-doc { display: block !important; background: white; }
+      .doc-wrapper { padding: 0; }
+      .doc-page {
+        box-shadow: none;
+        border-radius: 0;
+        max-width: 100%;
+        padding: 20mm 20mm;
+        min-height: auto;
+      }
+      [contenteditable] { outline: none !important; background: transparent !important; }
+      .soap-field-value:focus, .doc-fecha:focus { background: transparent !important; }
+      .edit-hint { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════
+     PANTALLA 1 — PEGAR NOTA
+════════════════════════════════════════ -->
+<div id="screen-paste">
+
+  <header class="header">
+    <div class="header-logo">
+      <!-- Mark Luciana SVG inline -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="28" height="28">
+        <circle cx="60" cy="60" r="54" fill="none" stroke="#F7F4EE" stroke-width="4"/>
+        <text x="60" y="86" text-anchor="middle" font-family="'DM Serif Display',Georgia,serif" font-size="78" fill="#F7F4EE">L</text>
+        <circle cx="80" cy="42" r="6" fill="#E85D3A"/>
+      </svg>
+      <span class="header-wordmark">Luciana<span>ia</span></span>
+    </div>
+    <div class="header-divider"></div>
+    <span class="header-product">Escribano Pediátrico</span>
+  </header>
+
+  <div class="hero">
+    <div class="hero-mark">
+      <h1 class="hero-title">Tu nota SOAP,<br>lista para <span>imprimir</span></h1>
+      <p class="hero-sub">
+        Pega el texto que copió tu celular. En un clic lo conviertes en documento editable listo para imprimir o guardar como PDF.
+      </p>
+    </div>
+
+    <div class="paste-zone">
+      <textarea id="nota-input" placeholder="Pega aquí tu nota SOAP...
+
+NOTA DE CONSULTA PEDIÁTRICA
+Médico: Dr. Yazbek Velazco — Pediatría
+Fecha: 24/04/2026
+
+PACIENTE
+Nombre: ..."></textarea>
+      <div class="paste-actions">
+        <span class="paste-hint">Ctrl+V para pegar</span>
+        <button class="btn-ghost" onclick="pasteFromClipboard()">📋 Pegar</button>
+        <button class="btn-primary" onclick="formatearNota()">Formatear documento →</button>
+      </div>
+    </div>
+
+    <p class="error-msg" id="error-msg">⚠️ No se detectó una nota SOAP válida. Asegúrate de pegar el texto completo.</p>
+
+    <p class="footer-brand">
+      Una herramienta gratuita de <a href="#">Luciana</a> · No almacena datos · Todo permanece en tu navegador
+    </p>
+  </div>
+
+</div>
+
+
+<!-- ════════════════════════════════════════
+     PANTALLA 2 — DOCUMENTO
+════════════════════════════════════════ -->
+<div id="screen-doc">
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <span class="toolbar-logo">Luciana<span>ia</span></span>
+    <button class="btn-back" onclick="volverAPegar()">← Nueva nota</button>
+    <span class="edit-hint">Haz clic en cualquier campo para editar</span>
+    <div class="toolbar-sep"></div>
+    <button class="btn-print" onclick="window.print()">
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.75 19.817m10.56-5.988-.72.096m0 0 .72 5.988M15 12V6a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v6"/>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/>
+      </svg>
+      Imprimir / Guardar PDF
+    </button>
+  </div>
+
+  <!-- Hoja -->
+  <div class="doc-wrapper">
+    <div class="doc-page" id="doc-page">
+
+      <!-- Membrete -->
+      <div class="doc-header">
+        <div>
+          <div class="doc-doctor-name" contenteditable="true" id="doc-medico">Dr. Nombre Apellido</div>
+          <div class="doc-doctor-meta">
+            <span contenteditable="true" id="doc-especialidad">Pediatría</span>
+            <span contenteditable="true" id="doc-cedula" style="display:none"></span>
+            <span contenteditable="true" id="doc-direccion" style="display:none"></span>
+            <span contenteditable="true" id="doc-telefono" style="display:none"></span>
+          </div>
+        </div>
+        <div class="doc-luciana-badge">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="54" fill="none" stroke="#1A4F82" stroke-width="4"/>
+            <text x="60" y="86" text-anchor="middle" font-family="'DM Serif Display',Georgia,serif" font-size="78" fill="#1A4F82">L</text>
+            <circle cx="80" cy="42" r="6" fill="#E85D3A"/>
+          </svg>
+          <span class="doc-luciana-label">Luciana</span>
+        </div>
+      </div>
+
+      <!-- Título y fecha -->
+      <div class="doc-title">NOTA DE CONSULTA PEDIÁTRICA</div>
+      <div class="doc-fecha" contenteditable="true" id="doc-fecha">Fecha: —</div>
+
+      <!-- Paciente -->
+      <div class="doc-paciente-box">
+        <div class="doc-paciente-label">Paciente</div>
+        <div contenteditable="true" id="doc-paciente-nombre" class="soap-field-value"></div>
+        <div contenteditable="true" id="doc-paciente-meta" class="soap-field-value" style="color:#6B7280;font-size:13px;"></div>
+        <div contenteditable="true" id="doc-acompanante" class="soap-field-value" style="color:#6B7280;font-size:13px;"></div>
+      </div>
+
+      <!-- S — Subjetivo -->
+      <div class="soap-section">
+        <div class="soap-heading">
+          <div class="soap-letter s">S</div>
+          <span class="soap-section-title">Subjetivo</span>
+          <div class="soap-divider"></div>
+        </div>
+        <div class="soap-fields">
+          <div>
+            <div class="soap-field-label">Motivo de consulta</div>
+            <div contenteditable="true" id="f-motivo" class="soap-field-value"></div>
+          </div>
+          <div>
+            <div class="soap-field-label">Padecimiento actual</div>
+            <div contenteditable="true" id="f-padecimiento" class="soap-field-value"></div>
+          </div>
+          <div>
+            <div class="soap-field-label">Antecedentes relevantes</div>
+            <div contenteditable="true" id="f-antecedentes" class="soap-field-value"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- O — Objetivo -->
+      <div class="soap-section">
+        <div class="soap-heading">
+          <div class="soap-letter o">O</div>
+          <span class="soap-section-title">Objetivo</span>
+          <div class="soap-divider"></div>
+        </div>
+        <div class="soap-fields">
+          <div>
+            <div class="soap-field-label">Signos vitales</div>
+            <div contenteditable="true" id="f-signos" class="soap-field-value"></div>
+          </div>
+          <div>
+            <div class="soap-field-label">Somatometría</div>
+            <div contenteditable="true" id="f-somatometria" class="soap-field-value"></div>
+          </div>
+          <div>
+            <div class="soap-field-label">Exploración física</div>
+            <div contenteditable="true" id="f-exploracion" class="soap-field-value"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- A — Análisis -->
+      <div class="soap-section">
+        <div class="soap-heading">
+          <div class="soap-letter a">A</div>
+          <span class="soap-section-title">Análisis</span>
+          <div class="soap-divider"></div>
+        </div>
+        <div class="soap-fields">
+          <div>
+            <div class="soap-field-label">Impresión diagnóstica</div>
+            <div contenteditable="true" id="f-diagnostico" class="soap-field-value" style="font-weight:600;"></div>
+          </div>
+          <div>
+            <div class="soap-field-label">Diagnósticos diferenciales</div>
+            <div contenteditable="true" id="f-diferenciales" class="soap-field-value"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- P — Plan -->
+      <div class="soap-section">
+        <div class="soap-heading">
+          <div class="soap-letter p">P</div>
+          <span class="soap-section-title">Plan</span>
+          <div class="soap-divider"></div>
+        </div>
+        <div class="soap-fields">
+          <div>
+            <div class="soap-field-label">Tratamiento</div>
+            <div contenteditable="true" id="f-tratamiento" class="soap-field-value"></div>
+          </div>
+          <div>
+            <div class="soap-field-label">Indicaciones no farmacológicas</div>
+            <div contenteditable="true" id="f-indicaciones" class="soap-field-value"></div>
+          </div>
+          <div>
+            <div class="soap-field-label">Estudios solicitados</div>
+            <div contenteditable="true" id="f-estudios" class="soap-field-value"></div>
+          </div>
+          <div>
+            <div class="soap-field-label">Seguimiento</div>
+            <div contenteditable="true" id="f-seguimiento" class="soap-field-value"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notas adicionales -->
+      <div id="f-notas-extra-wrap" style="display:none" class="doc-notas-extra">
+        <div class="soap-field-label" style="color:#92400e;margin-bottom:4px;">Notas adicionales</div>
+        <div contenteditable="true" id="f-notas-extra" class="soap-field-value" style="color:#92400e;"></div>
+      </div>
+
+      <!-- Footer del documento -->
+      <div class="doc-footer">
+        <p class="doc-footer-disclaimer">
+          Documento generado como apoyo clínico. No sustituye el juicio médico ni el expediente clínico oficial.
+          Esta herramienta no almacena datos del paciente.
+        </p>
+        <div class="doc-footer-luciana">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="54" fill="none" stroke="#1A4F82" stroke-width="4"/>
+            <text x="60" y="86" text-anchor="middle" font-family="'DM Serif Display',Georgia,serif" font-size="78" fill="#1A4F82">L</text>
+            <circle cx="80" cy="42" r="6" fill="#E85D3A"/>
+          </svg>
+          <span class="doc-footer-luciana-text">Luciana<span>ia</span></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ── Parser de texto SOAP ──────────────────────────────────────────────────────
+
+function getLine(lines, prefixes) {
+  for (const line of lines) {
+    for (const p of prefixes) {
+      if (line.toLowerCase().startsWith(p.toLowerCase())) {
+        return line.slice(p.length).trim();
+      }
+    }
+  }
+  return "";
+}
+
+function getBlock(text, startMarkers, endMarkers) {
+  const lines = text.split("\n");
+  let capturing = false;
+  let result = [];
+
+  for (const line of lines) {
+    const lineLow = line.toLowerCase().trim();
+
+    // ¿Es el inicio de este bloque?
+    if (!capturing) {
+      for (const m of startMarkers) {
+        if (lineLow.includes(m.toLowerCase())) {
+          capturing = true;
+          break;
+        }
+      }
+      continue;
+    }
+
+    // ¿Es el inicio de otro bloque? → parar
+    let stop = false;
+    for (const e of endMarkers) {
+      if (lineLow.includes(e.toLowerCase())) { stop = true; break; }
+    }
+    if (stop) break;
+
+    if (line.trim()) result.push(line.trim());
+  }
+  return result.join("\n");
+}
+
+function parseField(block, prefixes) {
+  const lines = block.split("\n");
+  return getLine(lines, prefixes);
+}
+
+function parseNota(text) {
+  const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+  const full = text;
+
+  // ── Médico y fecha ──
+  const medico   = getLine(lines, ["Médico:", "Medico:"]);
+  const fecha    = getLine(lines, ["Fecha:"]);
+
+  // ── Paciente ──
+  const nombre     = getLine(lines, ["Nombre:"]);
+  const edadSexo   = getLine(lines, ["Edad:"]);   // "4 años | Sexo: M"
+  const acomp      = getLine(lines, ["Acompañante:", "Acompanante:"]);
+
+  // ── Subjetivo ──
+  const sBlock = getBlock(full,
+    ["S — SUBJETIVO", "SUBJETIVO"],
+    ["O — OBJETIVO", "OBJETIVO"]);
+  const motivo      = parseField(sBlock, ["Motivo de consulta:"]);
+  const padecimiento= parseField(sBlock, ["Padecimiento actual:"]);
+  const antecedentes= parseField(sBlock, ["Antecedentes:"]);
+
+  // ── Objetivo ──
+  const oBlock = getBlock(full,
+    ["O — OBJETIVO", "OBJETIVO"],
+    ["A — ANÁLISIS", "A — ANALISIS", "ANÁLISIS", "ANALISIS"]);
+  const signos      = parseField(oBlock, ["Signos vitales:"]);
+  const somatometria= parseField(oBlock, ["Somatometría:", "Somatometria:"]);
+  const exploracion = parseField(oBlock, ["Exploración física:", "Exploracion fisica:"]);
+
+  // ── Análisis ──
+  const aBlock = getBlock(full,
+    ["A — ANÁLISIS", "A — ANALISIS", "ANÁLISIS"],
+    ["P — PLAN", "PLAN"]);
+  const diagnostico  = parseField(aBlock, ["Impresión diagnóstica:", "Impresion diagnostica:"]);
+  const diferenciales= parseField(aBlock, ["Dx diferenciales:", "Diagnósticos diferenciales:"]);
+
+  // ── Plan ──
+  const pBlock = getBlock(full,
+    ["P — PLAN", "PLAN"],
+    ["Notas:"]);
+  const tratamiento  = parseField(pBlock, ["Tratamiento:"]);
+  const indicaciones = parseField(pBlock, ["Indicaciones:"]);
+  const estudios     = parseField(pBlock, ["Estudios:"]);
+  const seguimiento  = parseField(pBlock, ["Seguimiento:"]);
+
+  // ── Notas adicionales ──
+  const notas = getLine(lines, ["Notas:"]);
+
+  return { medico, fecha, nombre, edadSexo, acomp,
+           motivo, padecimiento, antecedentes,
+           signos, somatometria, exploracion,
+           diagnostico, diferenciales,
+           tratamiento, indicaciones, estudios, seguimiento, notas };
+}
+
+// ── Rellenar el documento ────────────────────────────────────────────────────
+
+function set(id, value, fallback = "No consignado") {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const text = value && value !== "No consignado" ? value : fallback;
+  el.textContent = text;
+  if (text === "No consignado" || !value || value === "No consignado") {
+    el.classList.add("no-consignado");
+  } else {
+    el.classList.remove("no-consignado");
+  }
+}
+
+function renderDoc(data) {
+  // Médico — separar nombre de especialidad
+  const medicoPartes = data.medico ? data.medico.split("—") : [];
+  const medicoNombre = medicoPartes[0]?.trim() || "Dr. Nombre Apellido";
+  const medicoEsp    = medicoPartes[1]?.trim() || "Pediatría";
+
+  document.getElementById("doc-medico").textContent = medicoNombre;
+  document.getElementById("doc-especialidad").textContent = medicoEsp;
+  document.getElementById("doc-fecha").textContent = data.fecha ? `Fecha: ${data.fecha}` : "Fecha: —";
+
+  // Paciente
+  set("doc-paciente-nombre", data.nombre);
+  document.getElementById("doc-paciente-meta").textContent = data.edadSexo || "";
+  document.getElementById("doc-acompanante").textContent =
+    data.acomp && data.acomp !== "No consignado" ? `Acompañante: ${data.acomp}` : "";
+
+  // S
+  set("f-motivo", data.motivo);
+  set("f-padecimiento", data.padecimiento);
+  set("f-antecedentes", data.antecedentes);
+
+  // O
+  set("f-signos", data.signos);
+  set("f-somatometria", data.somatometria);
+  set("f-exploracion", data.exploracion);
+
+  // A
+  set("f-diagnostico", data.diagnostico);
+  set("f-diferenciales", data.diferenciales);
+
+  // P
+  set("f-tratamiento", data.tratamiento);
+  set("f-indicaciones", data.indicaciones);
+  set("f-estudios", data.estudios);
+  set("f-seguimiento", data.seguimiento);
+
+  // Notas extra
+  const notasWrap = document.getElementById("f-notas-extra-wrap");
+  if (data.notas && data.notas !== "No consignado") {
+    document.getElementById("f-notas-extra").textContent = data.notas;
+    notasWrap.style.display = "block";
+  } else {
+    notasWrap.style.display = "none";
+  }
+}
+
+// ── Acciones de UI ───────────────────────────────────────────────────────────
+
+function formatearNota() {
+  const texto = document.getElementById("nota-input").value.trim();
+  const errorEl = document.getElementById("error-msg");
+
+  if (!texto || texto.length < 30) {
+    errorEl.style.display = "block";
+    return;
+  }
+  // Verificar que parece una nota SOAP
+  if (!texto.includes("SUBJETIVO") && !texto.includes("Motivo") && !texto.includes("PACIENTE")) {
+    errorEl.style.display = "block";
+    return;
+  }
+
+  errorEl.style.display = "none";
+  const data = parseNota(texto);
+  renderDoc(data);
+
+  document.getElementById("screen-paste").style.display = "none";
+  document.getElementById("screen-doc").style.display = "block";
+  window.scrollTo(0, 0);
+}
+
+function volverAPegar() {
+  document.getElementById("screen-doc").style.display = "none";
+  document.getElementById("screen-paste").style.display = "flex";
+  window.scrollTo(0, 0);
+}
+
+async function pasteFromClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    document.getElementById("nota-input").value = text;
+  } catch {
+    document.getElementById("nota-input").focus();
+    document.execCommand("paste");
+  }
+}
+
+// Enter en textarea no formatea (solo Ctrl+Enter)
+document.getElementById("nota-input").addEventListener("keydown", e => {
+  if (e.key === "Enter" && e.ctrlKey) formatearNota();
+});
+</script>
+
+</body>
+</html>
