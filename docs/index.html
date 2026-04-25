@@ -204,16 +204,51 @@
       border-radius: 30%;
       background: radial-gradient(circle at 30% 28%, #F08465 0%, #E85D3A 65%, #B83C1F 100%);
     }
-    /* Icon cross-fade */
+    body[data-rec="paused"] .rec-btn {
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 28%, #6B90B8 0%, #1A4F82 70%, #0F3259 100%);
+    }
+    /* Icon cross-fade — 3 estados */
     .rec-icon {
       position: absolute; inset: 0;
       display: grid; place-items: center;
       transition: opacity .25s ease, transform .35s cubic-bezier(.2,.8,.2,1);
     }
-    .rec-icon-mic  { opacity: 1; }
-    .rec-icon-stop { opacity: 0; transform: scale(0.6); }
-    body[data-rec="on"] .rec-icon-mic  { opacity: 0; transform: scale(0.7); }
-    body[data-rec="on"] .rec-icon-stop { opacity: 1; transform: scale(1); }
+    .rec-icon-mic   { opacity: 1; }
+    .rec-icon-pause { opacity: 0; transform: scale(0.6); }
+    .rec-icon-play  { opacity: 0; transform: scale(0.6); }
+
+    body[data-rec="on"] .rec-icon-mic   { opacity: 0; transform: scale(0.7); }
+    body[data-rec="on"] .rec-icon-pause { opacity: 1; transform: scale(1); }
+    body[data-rec="on"] .rec-icon-play  { opacity: 0; transform: scale(0.6); }
+
+    body[data-rec="paused"] .rec-icon-mic   { opacity: 0; transform: scale(0.7); }
+    body[data-rec="paused"] .rec-icon-pause { opacity: 0; transform: scale(0.6); }
+    body[data-rec="paused"] .rec-icon-play  { opacity: 1; transform: scale(1); }
+
+    /* Botón Finalizar — aparece durante grabación y pausa */
+    .btn-finalizar {
+      position: absolute; left: 50%;
+      top: calc(80px + var(--btn-size) + 72px);
+      transform: translateX(-50%);
+      display: flex; align-items: center; gap: 8px;
+      background: var(--navy-deep); color: var(--cream);
+      font-family: var(--sans); font-size: 13px; font-weight: 600;
+      padding: 10px 22px; border-radius: 999px;
+      border: none; cursor: pointer;
+      opacity: 0; pointer-events: none;
+      transition: opacity .3s ease, transform .3s ease;
+      transform: translateX(-50%) translateY(4px);
+      white-space: nowrap;
+    }
+    body[data-rec="on"] .btn-finalizar,
+    body[data-rec="paused"] .btn-finalizar {
+      opacity: 1; pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+    body[data-rec="paused"] .btn-finalizar {
+      background: var(--coral);
+    }
     .stop-square {
       width: calc(var(--btn-size) * 0.32);
       height: calc(var(--btn-size) * 0.32);
@@ -478,11 +513,19 @@
           <span class="rec-icon rec-icon-mic">
             <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
           </span>
-          <span class="rec-icon rec-icon-stop">
-            <span class="stop-square"></span>
+          <span class="rec-icon rec-icon-pause">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg>
+          </span>
+          <span class="rec-icon rec-icon-play">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.14v14l11-7-11-7z"/></svg>
           </span>
         </button>
       </div>
+
+      <button class="btn-finalizar" id="btn-finalizar">
+        Finalizar consulta
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
 
       <div class="wave" id="wave" aria-hidden="true"></div>
     </div>
@@ -668,7 +711,7 @@ const setRecUI = on => {
   if (on) {
     title.innerHTML = 'Escuchando<br/>cada palabra.';
     lede.textContent = 'El audio se procesa al terminar y se descarta de inmediato. Nunca se almacena.';
-    hint.textContent = 'TOCA PARA FINALIZAR';
+    hint.textContent = 'TOCA PARA PAUSAR';
     tag.textContent = 'GRABANDO';
   } else {
     title.innerHTML = 'Usted atienda<br/>al paciente,<br/>yo tomo nota<br/>de todo.';
@@ -780,11 +823,49 @@ const onRecordingStop = () => {
   processAudio();
 };
 
-// ─── BTN RECORD CLICK ─────────────────────────────────────────────────────────
+// ─── BTN RECORD — graba / pausa / reanuda ────────────────────────────────────
 $('btn-record').addEventListener('click', () => {
-  if (!state.recording) startRecording();
-  else stopRecording();
+  if (!state.recording && document.body.dataset.rec === 'off') {
+    startRecording();
+  } else if (state.recording && document.body.dataset.rec === 'on') {
+    pauseRecording();
+  } else if (document.body.dataset.rec === 'paused') {
+    resumeRecording();
+  }
 });
+
+// ─── BTN FINALIZAR ────────────────────────────────────────────────────────────
+$('btn-finalizar').addEventListener('click', () => stopRecording());
+
+const pauseRecording = () => {
+  if (!state.mediaRecorder) return;
+  state.mediaRecorder.pause();
+  clearInterval(state.timerInterval);
+  stopViz();
+  document.body.dataset.rec = 'paused';
+  $('rec-title').innerHTML = 'Pausada.';
+  $('rec-lede').textContent = 'Toca para reanudar — o finaliza para generar la nota.';
+  $('rec-hint').textContent = 'TOCA PARA REANUDAR';
+  $('rec-tag').textContent = 'PAUSADA';
+};
+
+const resumeRecording = () => {
+  if (!state.mediaRecorder) return;
+  state.mediaRecorder.resume();
+  document.body.dataset.rec = 'on';
+  $('rec-title').innerHTML = 'Escuchando<br/>cada palabra.';
+  $('rec-lede').textContent = 'El audio se procesa al terminar y se descarta de inmediato. Nunca se almacena.';
+  $('rec-hint').textContent = 'TOCA PARA PAUSAR';
+  $('rec-tag').textContent = 'GRABANDO';
+  // Reiniciar timer y visualizador
+  state.timerInterval = setInterval(() => {
+    state.elapsed++;
+    $('rec-timer').textContent = fmt(state.elapsed);
+    if (state.elapsed >= WARN_MINUTES * 60) $('rec-tag').textContent = 'CERRANDO';
+    if (state.elapsed >= MAX_MINUTES * 60) { showToast(`Grabación detenida al llegar a ${MAX_MINUTES} min`); stopRecording(); }
+  }, 1000);
+  if (state.mediaRecorder?.stream) startViz(state.mediaRecorder.stream);
+};
 
 // ─── PROCESSING — Real API call ───────────────────────────────────────────────
 const runProcessingUI = (realDone) => {
