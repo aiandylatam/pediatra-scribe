@@ -1,62 +1,94 @@
 /**
- * Escribano del Pediatra — Cloudflare Worker
- * Pipeline: audio → Groq Whisper (transcripción) → Groq Llama 3.3 70B (nota SOAP)
- * Responde con SSE para streaming de la nota al frontend.
+ * Escribano Médico — Cloudflare Worker
+ * Soporta múltiples especialidades vía campo `tipo` en el FormData.
+ * tipos: "medico" (default) | "nutricion"
  */
 
 const GROQ_API_BASE = "https://api.groq.com/openai/v1";
-const MAX_AUDIO_BYTES = 25 * 1024 * 1024; // 25 MB — límite de Groq Whisper
+const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
 const MAX_RETRIES = 3;
 
-// ─── Prompt clínico ──────────────────────────────────────────────────────────
+// ─── Prompts por especialidad ─────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `Eres un asistente clínico que convierte transcripciones de consultas pediátricas
+const PROMPT_MEDICO = `Eres un asistente clínico que convierte transcripciones de consultas médicas
 en español al formato de nota SOAP del expediente clínico mexicano (NOM-004-SSA3-2012).
 
 REGLAS CRÍTICAS:
-1. NO inventes datos. Si un dato no fue mencionado en la transcripción, escribe
-   exactamente "No consignado" en ese campo. Nunca infieras valores de signos
-   vitales, medicamentos, dosis, diagnósticos o fechas.
-2. Elimina chit-chat, saludos, interrupciones del niño, comentarios del cuidador
-   sin relevancia clínica, y ruido conversacional.
-3. Conserva la voz clínica del médico; si el cuidador dijo algo relevante,
-   resúmelo como "la madre refiere que..." o "el padre menciona...".
-4. Si se menciona una medicación, respeta el nombre y dosis textual. Si la dosis
-   suena ambigua, déjala textual entre comillas y agrega "[verificar]".
-5. Responde ÚNICAMENTE con JSON válido, sin markdown, sin explicaciones, sin bloques de código.
+1. NO inventes datos. Si un dato no fue mencionado, escribe "No consignado".
+2. Elimina chit-chat, saludos y ruido conversacional sin relevancia clínica.
+3. Conserva la voz clínica del médico. Si el paciente o familiar dijo algo relevante, resúmelo.
+4. Si se menciona una medicación, respeta nombre y dosis textual. Si es ambigua, agrega "[verificar]".
+5. Responde ÚNICAMENTE con JSON válido, sin markdown, sin explicaciones.
 
-ESTRUCTURA DE SALIDA OBLIGATORIA:
+ESTRUCTURA DE SALIDA:
 {
-  "medico": "Médico tratante — si se mencionó nombre y especialidad, anótalos; si no, escribe 'No consignado'",
-  "fecha_aproximada": "string — fecha si se mencionó, si no 'No consignado'",
-  "paciente": {
-    "nombre": "string o 'No consignado'",
-    "edad": "string o 'No consignado'",
-    "sexo": "string o 'No consignado'",
-    "acompanante": "string o 'No consignado'"
-  },
-  "subjetivo": {
-    "motivo_consulta": "string — en una frase",
-    "padecimiento_actual": "string — narrativa clínica, sin chit-chat",
-    "antecedentes_relevantes": "string — solo lo mencionado en la consulta"
-  },
-  "objetivo": {
-    "signos_vitales": "string o 'No consignado'",
-    "somatometria": "string o 'No consignado'",
-    "exploracion_fisica": "string — solo hallazgos mencionados por el médico"
-  },
-  "analisis": {
-    "impresion_diagnostica": "string — lo que el médico dictó o dedujo en voz alta",
-    "diagnosticos_diferenciales": "string o 'No consignado'"
-  },
-  "plan": {
-    "tratamiento": "string — medicamentos, dosis, duración tal como se mencionaron",
-    "indicaciones_no_farmacologicas": "string o 'No consignado'",
-    "estudios_solicitados": "string o 'No consignado'",
-    "seguimiento": "string — próxima cita o signos de alarma mencionados"
-  },
-  "notas_adicionales": "string — cualquier información clínica relevante que no encaje arriba, o 'No consignado'"
+  "tipo": "medico",
+  "medico": "string o 'No consignado'",
+  "fecha_aproximada": "string o 'No consignado'",
+  "paciente": { "nombre": "string o 'No consignado'", "edad": "string o 'No consignado'", "sexo": "string o 'No consignado'", "acompanante": "string o 'No consignado'" },
+  "subjetivo": { "motivo_consulta": "string", "padecimiento_actual": "string", "antecedentes_relevantes": "string o 'No consignado'" },
+  "objetivo": { "signos_vitales": "string o 'No consignado'", "somatometria": "string o 'No consignado'", "exploracion_fisica": "string o 'No consignado'" },
+  "analisis": { "impresion_diagnostica": "string", "diagnosticos_diferenciales": "string o 'No consignado'" },
+  "plan": { "tratamiento": "string o 'No consignado'", "indicaciones_no_farmacologicas": "string o 'No consignado'", "estudios_solicitados": "string o 'No consignado'", "seguimiento": "string o 'No consignado'" },
+  "notas_adicionales": "string o 'No consignado'"
 }`;
+
+const PROMPT_NUTRICION = `Eres un asistente especializado en nutrición clínica que convierte transcripciones
+de consultas nutricionales en español en una evaluación nutricional estructurada.
+
+REGLAS CRÍTICAS:
+1. NO inventes datos. Si un dato no fue mencionado, escribe "No consignado".
+2. Elimina saludos, chit-chat y conversación irrelevante.
+3. Respeta los valores numéricos exactamente como se mencionaron (peso, talla, medidas).
+4. Si el nutriólogo mencionó un plan o indicación, transcríbelo fielmente.
+5. Responde ÚNICAMENTE con JSON válido, sin markdown, sin explicaciones.
+
+ESTRUCTURA DE SALIDA:
+{
+  "tipo": "nutricion",
+  "nutriologo": "string o 'No consignado'",
+  "fecha_aproximada": "string o 'No consignado'",
+  "tipo_consulta": "Primera consulta / Seguimiento / No consignado",
+  "paciente": { "nombre": "string o 'No consignado'", "edad": "string o 'No consignado'", "sexo": "string o 'No consignado'", "ocupacion": "string o 'No consignado'" },
+  "antropometria": {
+    "peso_actual": "string o 'No consignado'",
+    "peso_previo": "string o 'No consignado'",
+    "talla": "string o 'No consignado'",
+    "imc": "string o 'No consignado'",
+    "clasificacion_imc": "string o 'No consignado'",
+    "grasa_corporal": "string o 'No consignado'",
+    "circunferencia_cintura": "string o 'No consignado'",
+    "otros": "string o 'No consignado'"
+  },
+  "evaluacion_dietetica": {
+    "recordatorio_24h": "string — lo que comió ayer o 'No consignado'",
+    "habitos_alimentarios": "string — horarios, número de comidas, hábitos o 'No consignado'",
+    "hidratacion": "string o 'No consignado'",
+    "restricciones_alergias": "string o 'No consignado'",
+    "suplementos_actuales": "string o 'No consignado'"
+  },
+  "evaluacion_clinica": {
+    "patologias": "string o 'No consignado'",
+    "medicamentos": "string o 'No consignado'",
+    "actividad_fisica": "string o 'No consignado'",
+    "sintomas_relevantes": "string o 'No consignado'"
+  },
+  "diagnostico_nutricional": "string — estado nutricional y factores de riesgo o 'No consignado'",
+  "plan_intervencion": {
+    "indicaciones_principales": "string o 'No consignado'",
+    "alimentos_incluir": "string o 'No consignado'",
+    "alimentos_evitar": "string o 'No consignado'",
+    "suplementacion": "string o 'No consignado'"
+  },
+  "metas": {
+    "corto_plazo": "string o 'No consignado'",
+    "largo_plazo": "string o 'No consignado'",
+    "proxima_cita": "string o 'No consignado'"
+  },
+  "notas_adicionales": "string o 'No consignado'"
+}`;
+
+const PROMPTS = { medico: PROMPT_MEDICO, nutricion: PROMPT_NUTRICION };
 
 // ─── CORS ────────────────────────────────────────────────────────────────────
 
@@ -133,7 +165,8 @@ async function transcribeAudio(audioBlob, apiKey) {
 
 // ─── Generación SOAP con Llama (respuesta completa, no streaming) ────────────
 
-async function generateSoap(transcripcion, apiKey) {
+async function generateSoap(transcripcion, apiKey, tipo = "medico") {
+  const prompt = PROMPTS[tipo] || PROMPTS.medico;
   const res = await fetchWithRetry(`${GROQ_API_BASE}/chat/completions`, {
     method: "POST",
     headers: {
@@ -143,7 +176,7 @@ async function generateSoap(transcripcion, apiKey) {
     body: JSON.stringify({
       model: "llama-3.3-70b-versatile",
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: prompt },
         {
           role: "user",
           content: `Transcripción de la consulta:\n\n${transcripcion}`,
@@ -232,9 +265,10 @@ export default {
     }
 
     // ── Pipeline: Whisper → Llama → JSON response ────────────────────────────
+    const tipo = formData.get("tipo") || "medico";
     try {
       const transcripcion = await transcribeAudio(audioFile, env.GROQ_API_KEY);
-      const soapJson = await generateSoap(transcripcion, env.GROQ_API_KEY);
+      const soapJson = await generateSoap(transcripcion, env.GROQ_API_KEY, tipo);
 
       return new Response(
         JSON.stringify({ ok: true, transcripcion, soap: soapJson }),
