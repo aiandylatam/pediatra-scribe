@@ -586,6 +586,10 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
         <span id="btn-copy-label">Copiar</span>
       </button>
+      <button class="btn btn-ghost" id="btn-word" style="flex:1.2;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Word
+      </button>
       <button class="btn btn-primary" id="btn-pdf">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
         PDF
@@ -1007,6 +1011,106 @@ $('btn-copy').addEventListener('click', async () => {
   btn.classList.add('copied');
   $('btn-copy-label').textContent = '¡Copiado!';
   setTimeout(() => { btn.classList.remove('copied'); $('btn-copy-label').textContent = 'Copiar'; }, 2500);
+});
+
+// ─── WORD (.doc) ─────────────────────────────────────────────────────────────
+$('btn-word').addEventListener('click', () => {
+  if (!state.notaJson) return;
+  const n = state.notaJson;
+  const p = n.paciente || {};
+  const ncv = v => (v && v !== 'No consignado') ? v : '<span style="color:#aaa;font-style:italic;">No consignado</span>';
+  const fecha = new Date().toLocaleDateString('es-MX', { day:'2-digit', month:'long', year:'numeric' });
+
+  const seccion = (letra, titulo, campos) => `
+    <h2 style="font-family:Georgia,serif;font-size:16pt;color:#E85D3A;margin:18pt 0 4pt;border-bottom:1pt solid #E0D9CC;padding-bottom:4pt;">
+      ${letra} &nbsp;<span style="font-size:9pt;color:#6B7280;font-family:Courier New,monospace;letter-spacing:0.1em;">${titulo}</span>
+    </h2>
+    ${campos.map(([label, val]) => `
+      <p style="margin:6pt 0 3pt;">
+        <span style="font-family:Courier New,monospace;font-size:8pt;color:#6B7280;text-transform:uppercase;letter-spacing:0.08em;">${label}</span><br/>
+        <span style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#1B1F26;">${ncv(val)}</span>
+      </p>`).join('')}`;
+
+  const html = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office"
+          xmlns:w="urn:schemas-microsoft-com:office:word"
+          xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <meta charset="utf-8"/>
+      <!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>90</w:Zoom></w:WordDocument></xml><![endif]-->
+      <style>
+        @page { size: A4; margin: 2.5cm 2.2cm; }
+        body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #1B1F26; }
+        h1 { font-family: Georgia, serif; font-size: 22pt; color: #0F3259; margin: 0 0 4pt; }
+        h2 { page-break-inside: avoid; }
+        p  { margin: 4pt 0; line-height: 1.5; }
+      </style>
+    </head>
+    <body>
+      <!-- MEMBRETE -->
+      <table width="100%" style="border-bottom:2pt solid #1A4F82;padding-bottom:8pt;margin-bottom:12pt;">
+        <tr>
+          <td><h1 style="font-family:Georgia,serif;font-size:20pt;color:#0F3259;margin:0;">Escribano Médico</h1></td>
+          <td align="right" style="font-family:Courier New,monospace;font-size:8pt;color:#8A8F99;vertical-align:bottom;">${fecha}</td>
+        </tr>
+      </table>
+
+      <p style="font-family:Courier New,monospace;font-size:8pt;color:#8A8F99;letter-spacing:0.18em;margin-bottom:10pt;">NOTA DE CONSULTA MÉDICA</p>
+
+      <!-- PACIENTE -->
+      <h1 style="font-family:Georgia,serif;font-size:20pt;color:#0F3259;">${ncv(p.nombre)}</h1>
+      <p style="font-family:Courier New,monospace;font-size:9pt;color:#6B7280;margin-bottom:14pt;">
+        ${[p.edad, p.sexo, p.acompanante ? 'Acomp: ' + p.acompanante : ''].filter(v => v && v !== 'No consignado').join(' &nbsp;·&nbsp; ')}
+        ${n.fecha_aproximada && n.fecha_aproximada !== 'No consignado' ? ' &nbsp;·&nbsp; ' + n.fecha_aproximada : ''}
+      </p>
+
+      ${seccion('S', 'SUBJETIVO', [
+        ['Motivo de consulta', (n.subjetivo||{}).motivo_consulta],
+        ['Padecimiento actual', (n.subjetivo||{}).padecimiento_actual],
+        ['Antecedentes relevantes', (n.subjetivo||{}).antecedentes_relevantes],
+      ])}
+      ${seccion('O', 'OBJETIVO', [
+        ['Signos vitales', (n.objetivo||{}).signos_vitales],
+        ['Somatometría', (n.objetivo||{}).somatometria],
+        ['Exploración física', (n.objetivo||{}).exploracion_fisica],
+      ])}
+      ${seccion('A', 'ANÁLISIS', [
+        ['Impresión diagnóstica', (n.analisis||{}).impresion_diagnostica],
+        ['Diagnósticos diferenciales', (n.analisis||{}).diagnosticos_diferenciales],
+      ])}
+      ${seccion('P', 'PLAN', [
+        ['Tratamiento', (n.plan||{}).tratamiento],
+        ['Indicaciones no farmacológicas', (n.plan||{}).indicaciones_no_farmacologicas],
+        ['Estudios solicitados', (n.plan||{}).estudios_solicitados],
+        ['Seguimiento', (n.plan||{}).seguimiento],
+      ])}
+      ${n.notas_adicionales && n.notas_adicionales !== 'No consignado' ? `
+        <h2 style="font-family:Georgia,serif;font-size:12pt;color:#6B7280;margin-top:16pt;border-top:1pt solid #E0D9CC;padding-top:8pt;">Notas adicionales</h2>
+        <p>${n.notas_adicionales}</p>` : ''}
+
+      <!-- FOOTER -->
+      <table width="100%" style="border-top:1pt solid #E0D9CC;margin-top:24pt;padding-top:8pt;">
+        <tr>
+          <td style="font-family:Courier New,monospace;font-size:7.5pt;color:#aaa;">
+            Generado con Escribano Médico · lucianaia.com<br/>
+            Documento de apoyo clínico. No sustituye el expediente clínico oficial.
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>`;
+
+  const blob = new Blob(['﻿', html], { type: 'application/msword' });
+  const url = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement('a'), {
+    href: url,
+    download: `nota-soap-${new Date().toISOString().slice(0,10)}.doc`
+  });
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast('Descargando Word…');
 });
 
 $('btn-pdf').addEventListener('click', () => {
