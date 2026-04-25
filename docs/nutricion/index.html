@@ -111,7 +111,7 @@
     }
     .rec-stage {
       flex: 1; position: relative;
-      min-height: 340px;
+      min-height: 300px;
     }
 
     /* Timer pill — always visible, fades in context */
@@ -236,7 +236,7 @@
       border: none; cursor: pointer;
       opacity: 0; pointer-events: none;
       transition: opacity .3s ease, background .3s ease;
-      white-space: nowrap; margin-top: 10px;
+      white-space: nowrap; margin-top: 8px;
     }
     body[data-rec="on"] .btn-finalizar,
     body[data-rec="paused"] .btn-finalizar {
@@ -272,7 +272,7 @@
     @keyframes wave-bar { 0%,100% { transform: scaleY(0.25); } 50% { transform: scaleY(1); } }
 
     /* Footer hint */
-    .rec-foot { padding: 0 28px 20px; text-align: center; }
+    .rec-foot { padding: 0 28px 8px; text-align: center; }
     .hint { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.16em; }
 
     /* ─── PROCESSING SCREEN ─── */
