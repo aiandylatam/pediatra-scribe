@@ -1,0 +1,225 @@
+═══════════════════════════════════════════════════════════════
+ESCRIBANO — ROADMAP DE VERTICALES
+Herramientas gratuitas de Luciana IA · lucianaia.com
+═══════════════════════════════════════════════════════════════
+
+BASE TÉCNICA (la misma para todas)
+───────────────────────────────────
+Stack: MediaRecorder → Groq Whisper → Groq Llama → Cloudflare Worker
+Costo operativo: $0 (free tiers)
+Tiempo de construcción por vertical: 1 día
+URL pattern: escribano.lucianaia.com/{vertical}/
+
+YA CONSTRUIDAS
+───────────────────────────────────
+✅ /           → Escribano Médico (nota SOAP)
+✅ /nutricion/ → Escribano Nutrición (evaluación nutricional ADCDPM)
+
+
+═══════════════════════════════════════════════════════════════
+7 VERTICALES PROPUESTAS
+═══════════════════════════════════════════════════════════════
+
+──────────────────────────────────────────────────────────────
+1. ESCRIBANO PSICOLOGÍA
+   URL: escribano.lucianaia.com/psicologia/
+──────────────────────────────────────────────────────────────
+PROSPECTO: Psicólogos, terapeutas, psiquiatras
+DOLOR: Escribir la nota de sesión después de cada paciente
+       consume 15-20 min. Multiplícalo por 6-8 sesiones/día.
+
+FORMATO DE NOTA (BIRP):
+  B — Behavior    : conductas observadas en sesión
+  I — Intervention: técnicas y herramientas usadas
+  R — Response    : cómo respondió el paciente
+  P — Plan        : tarea, próxima sesión, ajustes
+
+CAMPOS EXTRA:
+  Modalidad terapéutica | Número de sesión | Estado de ánimo
+  Riesgo (ideación, autolesión) | Medicación psiquiátrica
+
+NOTA ESPECIAL: Campo de riesgo con bandera visual si se menciona
+               cualquier indicador de peligro.
+
+TAMAÑO DEL MERCADO MX: ~180,000 psicólogos activos.
+
+
+──────────────────────────────────────────────────────────────
+2. ESCRIBANO DENTAL
+   URL: escribano.lucianaia.com/dental/
+──────────────────────────────────────────────────────────────
+PROSPECTO: Dentistas, odontólogos generales y especialistas
+DOLOR: Dictar el tratamiento realizado, el plan siguiente y
+       los materiales usados mientras trabaja es imposible.
+       Lo anota al final y olvida detalles.
+
+FORMATO DE NOTA:
+  Paciente | Pieza(s) tratada(s) | Procedimiento realizado
+  Materiales utilizados | Observaciones clínicas
+  Plan de tratamiento siguiente | Indicaciones post-consulta
+  Próxima cita
+
+DIFERENCIADOR: El dentista menciona "pieza 36, corona metal-
+               porcelana, cementado con RelyX" — la IA
+               estructura eso limpiamente sin inventar nada.
+
+TAMAÑO DEL MERCADO MX: ~120,000 cirujanos dentistas.
+
+
+──────────────────────────────────────────────────────────────
+3. ESCRIBANO VETERINARIO
+   URL: escribano.lucianaia.com/veterinaria/
+──────────────────────────────────────────────────────────────
+PROSPECTO: Veterinarios clínicos y de pequeñas especies
+DOLOR: La historia clínica animal tiene datos únicos
+       (especie, raza, peso, vacunas) que se pierden si
+       no se anotan en el momento.
+
+FORMATO DE NOTA:
+  Paciente: nombre, especie, raza, edad, sexo, peso
+  Dueño/tutor | Motivo de consulta
+  Exploración física | Signos vitales animales
+  Diagnóstico presuntivo | Plan terapéutico
+  Vacunas aplicadas | Próxima cita / recordatorio
+
+OPORTUNIDAD LUCIANA IA: Recordatorios automáticos de
+                        vacunas y desparasitaciones.
+
+TAMAÑO DEL MERCADO MX: ~35,000 médicos veterinarios.
+
+
+──────────────────────────────────────────────────────────────
+4. ESCRIBANO FISIOTERAPIA
+   URL: escribano.lucianaia.com/fisioterapia/
+──────────────────────────────────────────────────────────────
+PROSPECTO: Fisioterapeutas, rehabilitadores, quiroprácticos
+DOLOR: Documentar la sesión de rehabilitación (ejercicios,
+       repeticiones, evolución del paciente) consume tiempo
+       valioso entre pacientes.
+
+FORMATO DE NOTA:
+  Evaluación funcional: ROM, dolor (EVA 0-10), fuerza
+  Técnicas aplicadas en sesión
+  Respuesta del paciente (mejoría, dolor, tolerancia)
+  Ejercicios indicados para casa
+  Evolución vs. sesión anterior
+  Número de sesión / total del plan
+
+DIFERENCIADOR: Rastrea progreso sesión a sesión.
+
+TAMAÑO DEL MERCADO MX: ~60,000 fisioterapeutas.
+
+
+──────────────────────────────────────────────────────────────
+5. ESCRIBANO LEGAL
+   URL: escribano.lucianaia.com/legal/
+──────────────────────────────────────────────────────────────
+PROSPECTO: Abogados, notarios, mediadores
+DOLOR: Después de una reunión con cliente, redactar la
+       minuta con acuerdos, fechas y compromisos toma
+       30-45 minutos. El abogado factura por hora.
+
+FORMATO DE NOTA:
+  Partes presentes | Fecha y duración
+  Asunto/expediente
+  Resumen de lo discutido
+  Acuerdos tomados (numerados)
+  Pendientes y responsables
+  Próxima reunión / audiencia
+
+DIFERENCIADOR: Ideal para abogados que quieren ofrecer
+               minutas formales a sus clientes como valor
+               agregado del servicio.
+
+OPORTUNIDAD LUCIANA IA: Gestión de agenda de audiencias
+                        y recordatorios a clientes.
+
+
+──────────────────────────────────────────────────────────────
+6. ESCRIBANO COACH
+   URL: escribano.lucianaia.com/coaching/
+──────────────────────────────────────────────────────────────
+PROSPECTO: Coaches, mentores de negocios, consultores
+DOLOR: Documentar compromisos y acuerdos de cada sesión
+       para dar seguimiento al cliente en la próxima.
+
+FORMATO DE NOTA:
+  Tipo de sesión (inicial, seguimiento, cierre)
+  Objetivo de la sesión
+  Temas trabajados
+  Insights del cliente (frases clave)
+  Compromisos adquiridos (con fecha)
+  Obstáculos identificados
+  Plan para la próxima sesión
+
+DIFERENCIADOR: El coach puede compartir el resumen
+               con el cliente como parte del servicio.
+
+TAMAÑO: Mercado de coaching en LATAM crece 20%/año.
+
+
+──────────────────────────────────────────────────────────────
+7. ESCRIBANO INMOBILIARIO
+   URL: escribano.lucianaia.com/inmobiliario/
+──────────────────────────────────────────────────────────────
+PROSPECTO: Agentes inmobiliarios, asesores de bienes raíces
+DOLOR: Después de mostrar una propiedad o reunirse con
+       un cliente, el agente tiene que recordar qué le
+       gustó, qué no, su presupuesto real y sus objeciones.
+       Si ve 5 propiedades al día, mezcla los detalles.
+
+FORMATO DE NOTA:
+  Cliente | Perfil de búsqueda
+  Propiedad visitada (si aplica)
+  Reacciones del cliente (qué gustó / no gustó)
+  Objeciones mencionadas
+  Presupuesto real (lo que dijo en privado)
+  Próximos pasos acordados
+  Nivel de urgencia de compra
+
+DIFERENCIADOR: El agente graba la reunión de camino
+               al carro, sin escribir nada.
+
+OPORTUNIDAD LUCIANA IA: Seguimiento automático a
+                        clientes en proceso de compra.
+
+
+═══════════════════════════════════════════════════════════════
+ESTRATEGIA DE LANZAMIENTO SUGERIDA
+═══════════════════════════════════════════════════════════════
+
+PRIORIDAD ALTA (mercado grande + dolor agudo + fácil acceso)
+  1. Psicología    → grupos de FB de psicólogos MX
+  2. Dental        → asociaciones dentales, grupos WhatsApp
+  3. Fisioterapia  → comunidades de rehabilitación
+
+PRIORIDAD MEDIA (buen mercado, ciclo de venta más largo)
+  4. Legal         → colegios de abogados, LinkedIn
+  5. Veterinaria   → grupos de vets en redes
+
+PRIORIDAD BAJA (nicho o requiere más personalización)
+  6. Coaching      → comunidad más dispersa
+  7. Inmobiliario  → cambio de hábito más grande
+
+
+═══════════════════════════════════════════════════════════════
+IMPLEMENTACIÓN TÉCNICA
+═══════════════════════════════════════════════════════════════
+
+Para agregar cada vertical:
+  1. Agregar PROMPT_{VERTICAL} en worker/worker.js
+  2. Agregar al objeto PROMPTS en worker.js
+  3. Copiar docs/index.html → docs/{vertical}/index.html
+  4. Cambiar TIPO = "{vertical}" en el JS
+  5. Adaptar renderResult() y buildPlainText() para los campos
+  6. Deploy: wrangler pages deploy + wrangler deploy
+
+Tiempo estimado por vertical: 4-6 horas
+
+Cada vertical es un lead magnet independiente
+apuntando al mismo formulario de lista de espera
+y a lucianaia.com.
+
+═══════════════════════════════════════════════════════════════
+Generado: Abril 2026 · Luciana IA · lucianaia.com
+═══════════════════════════════════════════════════════════════
