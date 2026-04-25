@@ -484,14 +484,14 @@
           <circle cx="80" cy="42" r="6" fill="#E85D3A"/>
         </svg>
       </a>
-      <div class="brand-text">ESCRIBANO DENTAL</div>
+      <div class="brand-text">ESCRIBANO VETERINARIO</div>
       <div style="width:38px;height:38px"></div>
     </header>
 
     <div class="rec-head">
       <div class="eyebrow" id="rec-eyebrow">NUEVA CONSULTA</div>
-      <h1 class="display" id="rec-title">Dicta tu consulta,<br/>yo estructuro<br/>la nota<br/>dental.</h1>
-      <p class="lede" id="rec-lede">Presiona grabar y dicta lo que hiciste. Generaremos la nota clínica dental estructurada.</p>
+      <h1 class="display" id="rec-title">Dicta tu consulta,<br/>yo estructuro<br/>la nota<br/>veterinaria.</h1>
+      <p class="lede" id="rec-lede">Presiona grabar y dicta la consulta. Generaremos la nota clínica veterinaria estructurada.</p>
     </div>
 
     <div class="rec-stage">
@@ -573,7 +573,7 @@
           <div class="ring-active"></div>
           <svg class="check" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M7 12l3 3 7-7"/></svg>
         </div>
-        <div class="label">Estructurando nota dental</div>
+        <div class="label">Estructurando nota veterinaria</div>
       </div>
     </div>
   </section>
@@ -958,7 +958,7 @@ const processAudio = async () => {
 
 const tryJSON = s => { try { return s ? JSON.parse(s.trim()) : null; } catch { return null; } };
 
-// ─── RENDER RESULT — DENTAL ──────────────────────────────────────────────────
+// ─── RENDER RESULT — VETERINARIO ─────────────────────────────────────────────
 const nc = v => (v !== null && v !== undefined && v !== '' && v !== 'No consignado') ? v : null;
 
 const campo = (label, val) => val
