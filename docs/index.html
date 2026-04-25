@@ -3,290 +3,1199 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="description" content="Graba una consulta pediátrica y genera la nota SOAP al instante." />
-  <meta name="theme-color" content="#0f766e" />
+  <meta name="description" content="Graba tu consulta pediátrica y recibe la nota SOAP al instante. Una herramienta gratuita de Luciana." />
+  <meta name="theme-color" content="#0F3259" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Dr. Yazbek" />
-
-  <title>Dr. Yazbek Velazco — Escribano del Pediatra</title>
-
-  <!-- PWA -->
+  <meta name="apple-mobile-web-app-title" content="Escribano" />
+  <title>Escribano Pediátrico — Luciana</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
-  <!-- Tailwind CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            teal: { 700: '#0f766e', 800: '#115e59', 600: '#0d9488' }
-          }
-        }
-      }
+  <style>
+    :root {
+      --navy:      #1A4F82;
+      --navy-deep: #0F3259;
+      --coral:     #E85D3A;
+      --cream:     #F7F4EE;
+      --gray-100:  #F3F4F6;
+      --gray-300:  #D1D5DB;
+      --gray-500:  #6B7280;
+      --gray-700:  #374151;
     }
-  </script>
 
-  <link rel="stylesheet" href="styles.css" />
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    button { touch-action: manipulation; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--gray-700);
+      min-height: 100vh;
+    }
+
+    /* ── Pantallas ── */
+    .screen { display: flex; flex-direction: column; min-height: 100vh; }
+    .screen.hidden { display: none !important; }
+
+    /* ══ HEADER ══ */
+    .app-header {
+      background: var(--navy-deep);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-wordmark {
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-size: 18px;
+      color: var(--cream);
+    }
+    .header-wordmark span { color: var(--coral); }
+    .header-tool {
+      font-size: 11px;
+      color: rgba(247,244,238,0.45);
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.04em;
+    }
+
+    /* Badge de privacidad */
+    .privacy-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 5px 10px;
+      font-size: 11px;
+      color: rgba(247,244,238,0.7);
+      font-family: 'DM Sans', sans-serif;
+    }
+    .privacy-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #4ade80;
+      flex-shrink: 0;
+    }
+
+    /* ══ PANTALLA 1 — GRABACIÓN ══ */
+    .record-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 32px 24px 28px;
+    }
+
+    .record-top {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .record-tagline {
+      font-size: 14px;
+      color: var(--gray-500);
+      max-width: 260px;
+      line-height: 1.5;
+    }
+
+    /* Zona central */
+    .record-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      width: 100%;
+      max-width: 300px;
+    }
+
+    /* Botón de grabación */
+    .btn-record {
+      width: 148px;
+      height: 148px;
+      border-radius: 50%;
+      border: none;
+      background: var(--navy);
+      color: var(--cream);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 8px 32px rgba(26,79,130,0.35);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn-record:active { transform: scale(0.95); }
+    .btn-record.recording {
+      background: #dc2626;
+      box-shadow: 0 0 0 0 rgba(220,38,38,0.5);
+      animation: pulse-ring 1.4s ease-out infinite;
+    }
+    @keyframes pulse-ring {
+      0%   { box-shadow: 0 0 0 0 rgba(220,38,38,0.45); }
+      70%  { box-shadow: 0 0 0 22px rgba(220,38,38,0); }
+      100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); }
+    }
+    .btn-record-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    /* Timer */
+    .timer {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 38px;
+      font-weight: 500;
+      color: var(--navy-deep);
+      letter-spacing: -1px;
+    }
+
+    /* Visualizador */
+    .viz-container {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 3px;
+      height: 40px;
+      width: 100%;
+    }
+    .viz-bar {
+      width: 5px;
+      min-height: 4px;
+      height: 4px;
+      background: var(--navy);
+      border-radius: 3px;
+      transition: height 0.08s ease;
+      opacity: 0.6;
+    }
+
+    /* Size indicator */
+    .size-indicator {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--gray-300);
+    }
+
+    /* Advertencia duración */
+    .duration-warning {
+      font-size: 12px;
+      color: #d97706;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    /* Zona de procesar */
+    .process-zone {
+      width: 100%;
+      max-width: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .process-hint {
+      font-size: 13px;
+      color: var(--gray-500);
+      text-align: center;
+    }
+    .btn-process {
+      width: 100%;
+      padding: 16px;
+      background: var(--coral);
+      color: white;
+      border: none;
+      border-radius: 16px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      box-shadow: 0 4px 16px rgba(232,93,58,0.35);
+    }
+    .btn-process:active { transform: scale(0.97); background: #d44f2e; }
+    .btn-discard {
+      font-size: 13px;
+      color: var(--gray-300);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    /* Footer pantalla 1 */
+    .record-footer {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .record-footer a {
+      font-size: 12px;
+      color: var(--navy);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .record-footer-sub {
+      font-size: 11px;
+      color: var(--gray-300);
+    }
+
+    /* ══ PANTALLA 2 — PROCESANDO ══ */
+    #screen-processing {
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      padding: 40px 24px;
+    }
+    .spinner-wrap {
+      position: relative;
+      width: 80px;
+      height: 80px;
+    }
+    .spinner-track {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 3px solid rgba(26,79,130,0.12);
+    }
+    .spinner-fill {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 3px solid var(--navy);
+      border-top-color: transparent;
+      animation: spin 0.9s linear infinite;
+    }
+    .spinner-icon {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .processing-text {
+      font-size: 17px;
+      font-weight: 500;
+      color: var(--navy-deep);
+      text-align: center;
+    }
+    .processing-sub {
+      font-size: 13px;
+      color: var(--gray-300);
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ══ PANTALLA 3 — RESULTADO ══ */
+    #screen-result {
+      padding: 0;
+    }
+
+    .result-toolbar {
+      background: var(--navy-deep);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .result-toolbar-brand {
+      font-family: 'DM Serif Display', serif;
+      font-size: 15px;
+      color: var(--cream);
+      flex: 1;
+    }
+    .result-toolbar-brand span { color: var(--coral); }
+
+    .btn-copy-nota {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--coral);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .btn-copy-nota:active { background: #d44f2e; }
+    .btn-copy-nota.copied { background: #16a34a; }
+
+    .btn-nueva {
+      background: rgba(255,255,255,0.1);
+      color: var(--cream);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      padding: 9px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .btn-nueva:active { background: rgba(255,255,255,0.2); }
+
+    /* Nota formateada */
+    .nota-card {
+      margin: 20px 16px;
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+    }
+
+    /* Encabezado de la nota */
+    .nota-encabezado {
+      background: var(--navy-deep);
+      color: var(--cream);
+      padding: 20px 20px 16px;
+    }
+    .nota-titulo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 15px;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+    }
+    .nota-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 16px;
+    }
+    .nota-meta-item {
+      font-size: 12px;
+      color: rgba(247,244,238,0.65);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .nota-meta-item strong {
+      color: var(--cream);
+      font-weight: 500;
+    }
+
+    /* Paciente strip */
+    .nota-paciente {
+      background: var(--cream);
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .nota-paciente-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--navy);
+      margin-bottom: 5px;
+    }
+    .nota-paciente-nombre {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--navy-deep);
+    }
+    .nota-paciente-sub {
+      font-size: 12px;
+      color: var(--gray-500);
+      margin-top: 2px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Secciones SOAP */
+    .nota-seccion {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .nota-seccion:last-child { border-bottom: none; }
+
+    .nota-seccion-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .nota-letra {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+    .nota-letra.s { background: #dbeafe; color: #1d4ed8; }
+    .nota-letra.o { background: #dcfce7; color: #15803d; }
+    .nota-letra.a { background: #fef3c7; color: #b45309; }
+    .nota-letra.p { background: #f3e8ff; color: #7c3aed; }
+    .nota-seccion-titulo {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gray-500);
+    }
+
+    .nota-campo { margin-bottom: 10px; }
+    .nota-campo:last-child { margin-bottom: 0; }
+    .nota-campo-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--gray-300);
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 2px;
+    }
+    .nota-campo-valor {
+      font-size: 13.5px;
+      color: var(--gray-700);
+      line-height: 1.6;
+    }
+    .nota-campo-valor.vacio {
+      color: var(--gray-300);
+      font-style: italic;
+    }
+    .nota-campo-valor.destacado {
+      font-weight: 600;
+      color: var(--navy-deep);
+    }
+
+    /* Transcripción colapsable */
+    .transcripcion-wrap {
+      margin: 0 16px 20px;
+    }
+    details summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--gray-300);
+      font-weight: 500;
+      padding: 8px 4px;
+    }
+    details summary::-webkit-details-marker { display: none; }
+    details[open] summary { color: var(--navy); }
+    .transcripcion-content {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      color: var(--gray-500);
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+    }
+
+    /* CTA Luciana */
+    .cta-luciana {
+      margin: 0 16px 32px;
+      background: var(--navy-deep);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .cta-luciana-text h3 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 15px;
+      color: var(--cream);
+      margin-bottom: 4px;
+    }
+    .cta-luciana-text p {
+      font-size: 12px;
+      color: rgba(247,244,238,0.55);
+      line-height: 1.5;
+    }
+    .cta-luciana-btn {
+      flex-shrink: 0;
+      background: var(--coral);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    /* Toast de error */
+    #error-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #dc2626;
+      color: white;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 12px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      max-width: calc(100vw - 32px);
+      text-align: center;
+      z-index: 200;
+      animation: slide-up 0.2s ease;
+    }
+    @keyframes slide-up {
+      from { opacity: 0; transform: translate(-50%, 12px); }
+      to   { opacity: 1; transform: translate(-50%, 0); }
+    }
+  </style>
 </head>
-<body class="bg-slate-50 min-h-screen font-sans text-slate-800 select-none">
+<body>
 
-  <!-- ═══════════════════════════════════════════════
-       PANTALLA 1 — GRABACIÓN
-  ════════════════════════════════════════════════ -->
-  <div id="screen-record" class="screen flex flex-col items-center justify-between min-h-screen px-6 py-10">
+<!-- ══════════════════════════════════════
+     PANTALLA 1 — GRABACIÓN
+══════════════════════════════════════ -->
+<div id="screen-record" class="screen">
 
-    <!-- Header -->
-    <div class="text-center">
-      <h1 class="text-2xl font-bold text-teal-700 tracking-tight">Dr. Yazbek Velazco</h1>
-      <p class="text-sm text-slate-500 mt-1">Pediatría · Graba la consulta · Recibe la nota SOAP</p>
+  <header class="app-header">
+    <div class="header-brand">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="26" height="26">
+        <circle cx="60" cy="60" r="54" fill="none" stroke="#F7F4EE" stroke-width="4"/>
+        <text x="60" y="86" text-anchor="middle" font-family="'DM Serif Display',Georgia,serif" font-size="78" fill="#F7F4EE">L</text>
+        <circle cx="80" cy="42" r="6" fill="#E85D3A"/>
+      </svg>
+      <div>
+        <div class="header-wordmark">Luciana<span>ia</span></div>
+        <div class="header-tool">escribano pediátrico</div>
+      </div>
+    </div>
+    <div class="privacy-badge">
+      <div class="privacy-dot"></div>
+      Audio local
+    </div>
+  </header>
+
+  <div class="record-body">
+
+    <!-- Top -->
+    <div class="record-top">
+      <p class="record-tagline">Graba la consulta · recibe la nota SOAP</p>
     </div>
 
-    <!-- Zona central -->
-    <div class="flex flex-col items-center gap-8 w-full max-w-xs">
+    <!-- Centro -->
+    <div class="record-center">
 
-      <!-- Botón de grabar -->
-      <button id="btn-record"
-        class="record-btn w-40 h-40 rounded-full flex flex-col items-center justify-center gap-2
-               bg-teal-700 text-white shadow-2xl transition-all duration-200 active:scale-95
-               focus:outline-none focus:ring-4 focus:ring-teal-400"
-        aria-label="Tocar para grabar">
-
-        <!-- Icono micrófono -->
-        <svg id="icon-mic" class="w-14 h-14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+      <button id="btn-record" class="btn-record" aria-label="Grabar">
+        <svg id="icon-mic" width="52" height="52" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.4">
           <path stroke-linecap="round" stroke-linejoin="round"
             d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 0 1 6 0v8.25a3 3 0 0 1-3 3Z"/>
         </svg>
-
-        <!-- Icono stop (oculto por defecto) -->
-        <svg id="icon-stop" class="w-14 h-14 hidden" fill="currentColor" viewBox="0 0 24 24">
+        <svg id="icon-stop" class="hidden" width="48" height="48" fill="currentColor" viewBox="0 0 24 24">
           <rect x="6" y="6" width="12" height="12" rx="2"/>
         </svg>
-
-        <span id="btn-record-label" class="text-xs font-semibold tracking-wide uppercase">Tocar para grabar</span>
+        <span id="btn-record-label" class="btn-record-label">Tocar para grabar</span>
       </button>
 
-      <!-- Timer -->
-      <div id="timer" class="text-4xl font-mono font-bold text-slate-700 hidden">
-        <span id="timer-display">00:00</span>
+      <div id="timer" class="timer hidden">00:00</div>
+      <p id="duration-warning" class="duration-warning hidden">⚠️ Detente antes de 20 min</p>
+
+      <div id="viz-container" class="viz-container hidden">
+        <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+        <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+        <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+        <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
       </div>
 
-      <!-- Advertencia de duración -->
-      <p id="duration-warning" class="hidden text-xs text-amber-600 font-medium text-center px-2">
-        ⚠️ Grabación larga. Detente antes de llegar a 20 min para evitar problemas.
-      </p>
-
-      <!-- Visualizador de audio -->
-      <div id="visualizer-container" class="hidden w-full flex items-end justify-center gap-1 h-12">
-        <div class="viz-bar" data-bar="0"></div>
-        <div class="viz-bar" data-bar="1"></div>
-        <div class="viz-bar" data-bar="2"></div>
-        <div class="viz-bar" data-bar="3"></div>
-        <div class="viz-bar" data-bar="4"></div>
-        <div class="viz-bar" data-bar="5"></div>
-        <div class="viz-bar" data-bar="6"></div>
-        <div class="viz-bar" data-bar="7"></div>
-        <div class="viz-bar" data-bar="8"></div>
-        <div class="viz-bar" data-bar="9"></div>
-        <div class="viz-bar" data-bar="10"></div>
-        <div class="viz-bar" data-bar="11"></div>
-      </div>
-
-      <!-- Tamaño estimado -->
-      <p id="size-indicator" class="hidden text-xs text-slate-400 font-mono"></p>
+      <p id="size-indicator" class="size-indicator hidden"></p>
 
     </div>
 
-    <!-- Botón procesar (aparece al detener) -->
-    <div id="process-zone" class="hidden flex flex-col items-center gap-3 w-full max-w-xs">
-      <p class="text-sm text-slate-500 text-center">Audio listo. Toca para generar la nota.</p>
-      <button id="btn-process"
-        class="w-full py-4 bg-teal-700 text-white rounded-2xl font-semibold text-lg shadow-lg
-               active:bg-teal-800 focus:outline-none focus:ring-4 focus:ring-teal-400 transition">
-        Generar nota SOAP →
-      </button>
-      <button id="btn-discard"
-        class="text-sm text-slate-400 underline underline-offset-2 focus:outline-none">
-        Descartar y grabar de nuevo
-      </button>
+    <!-- Procesar -->
+    <div id="process-zone" class="process-zone hidden">
+      <p class="process-hint">Audio listo. Toca para generar la nota.</p>
+      <button id="btn-process" class="btn-process">Generar nota SOAP →</button>
+      <button id="btn-discard" class="btn-discard">Descartar y grabar de nuevo</button>
     </div>
 
-    <!-- Hint de instalación PWA -->
-    <p id="pwa-hint" class="text-xs text-slate-400 text-center max-w-xs hidden">
-      💡 Para instalar: menú del navegador → <strong>Agregar a pantalla de inicio</strong>
-    </p>
-
-  </div>
-
-
-  <!-- ═══════════════════════════════════════════════
-       PANTALLA 2 — PROCESANDO
-  ════════════════════════════════════════════════ -->
-  <div id="screen-processing" class="screen hidden flex flex-col items-center justify-center min-h-screen px-6 gap-10">
-
-    <!-- Spinner -->
-    <div class="relative w-24 h-24">
-      <div class="w-24 h-24 rounded-full border-4 border-teal-100"></div>
-      <div class="absolute inset-0 w-24 h-24 rounded-full border-4 border-teal-600 border-t-transparent animate-spin"></div>
-      <!-- Ícono estetoscopio -->
-      <div class="absolute inset-0 flex items-center justify-center text-3xl">🩺</div>
-    </div>
-
-    <div class="text-center">
-      <p id="processing-status" class="text-lg font-semibold text-slate-700">Transcribiendo audio...</p>
-      <p class="text-sm text-slate-400 mt-2">No cierres esta pantalla</p>
-    </div>
-
-    <!-- Preview de nota SOAP en tiempo real (streaming) -->
-    <div id="soap-preview-container" class="hidden w-full max-w-sm">
-      <p class="text-xs text-slate-400 uppercase font-semibold tracking-widest mb-2 text-center">Generando nota...</p>
-      <div id="soap-preview"
-        class="bg-white rounded-xl p-4 shadow text-xs font-mono text-slate-600 max-h-52 overflow-auto whitespace-pre-wrap leading-relaxed">
-      </div>
+    <!-- Footer -->
+    <div class="record-footer">
+      <a href="https://lucianaia.com" target="_blank">lucianaia.com →</a>
+      <span class="record-footer-sub">Tu audio nunca sale de tu dispositivo</span>
     </div>
 
   </div>
+</div>
 
 
-  <!-- ═══════════════════════════════════════════════
-       PANTALLA 3 — RESULTADO
-  ════════════════════════════════════════════════ -->
-  <div id="screen-result" class="screen hidden flex flex-col min-h-screen px-4 py-8 gap-6 max-w-2xl mx-auto w-full">
-
-    <!-- Header con botones de acción -->
-    <div class="flex items-center justify-between">
+<!-- ══════════════════════════════════════
+     PANTALLA 2 — PROCESANDO
+══════════════════════════════════════ -->
+<div id="screen-processing" class="screen hidden">
+  <header class="app-header">
+    <div class="header-brand">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="26" height="26">
+        <circle cx="60" cy="60" r="54" fill="none" stroke="#F7F4EE" stroke-width="4"/>
+        <text x="60" y="86" text-anchor="middle" font-family="'DM Serif Display',Georgia,serif" font-size="78" fill="#F7F4EE">L</text>
+        <circle cx="80" cy="42" r="6" fill="#E85D3A"/>
+      </svg>
       <div>
-        <h2 class="text-lg font-bold text-teal-700">Nota SOAP</h2>
-        <p class="text-xs text-slate-400">Dr. Yazbek Velazco — Pediatría</p>
+        <div class="header-wordmark">Luciana<span>ia</span></div>
+        <div class="header-tool">escribano pediátrico</div>
       </div>
-      <div class="flex gap-2">
-        <button id="btn-copy"
-          class="flex items-center gap-1.5 px-4 py-2 bg-teal-700 text-white rounded-xl text-sm font-semibold
-                 active:bg-teal-800 shadow focus:outline-none focus:ring-4 focus:ring-teal-300 transition">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-          </svg>
-          <span id="btn-copy-label">Copiar nota</span>
-        </button>
-        <button id="btn-new"
-          class="px-4 py-2 border border-slate-300 text-slate-600 rounded-xl text-sm font-semibold
-                 active:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300 transition">
-          Nueva consulta
-        </button>
+    </div>
+  </header>
+
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:40px 24px;">
+    <div class="spinner-wrap">
+      <div class="spinner-track"></div>
+      <div class="spinner-fill"></div>
+      <div class="spinner-icon">🩺</div>
+    </div>
+    <div>
+      <p id="processing-status" class="processing-text">Transcribiendo audio...</p>
+      <p class="processing-sub" style="margin-top:6px;">No cierres esta pantalla</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PANTALLA 3 — RESULTADO
+══════════════════════════════════════ -->
+<div id="screen-result" class="screen hidden">
+
+  <!-- Toolbar -->
+  <div class="result-toolbar">
+    <span class="result-toolbar-brand">Luciana<span>ia</span></span>
+    <button id="btn-nueva" class="btn-nueva">Nueva consulta</button>
+    <button id="btn-copy" class="btn-copy-nota">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+      </svg>
+      <span id="btn-copy-label">Copiar nota</span>
+    </button>
+  </div>
+
+  <!-- Nota -->
+  <div class="nota-card">
+
+    <!-- Encabezado -->
+    <div class="nota-encabezado">
+      <div class="nota-titulo">NOTA DE CONSULTA PEDIÁTRICA</div>
+      <div class="nota-meta-row">
+        <span class="nota-meta-item" id="res-medico"></span>
+        <span class="nota-meta-item" id="res-fecha"></span>
       </div>
     </div>
 
-    <!-- Nota SOAP renderizada -->
-    <div id="soap-card" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <!-- Paciente -->
+    <div class="nota-paciente">
+      <div class="nota-paciente-label">Paciente</div>
+      <div class="nota-paciente-nombre" id="res-nombre"></div>
+      <div class="nota-paciente-sub" id="res-edad-sexo"></div>
+      <div class="nota-paciente-sub" id="res-acompanante"></div>
+    </div>
 
-      <!-- Paciente -->
-      <div class="px-5 py-4 border-b border-slate-100">
-        <div class="flex items-baseline justify-between">
-          <span id="nota-nombre" class="font-semibold text-slate-800 text-base"></span>
-          <span id="nota-fecha" class="text-xs text-slate-400"></span>
-        </div>
-        <div class="flex flex-wrap gap-x-3 gap-y-1 mt-1">
-          <span id="nota-edad" class="text-sm text-slate-500"></span>
-          <span id="nota-sexo" class="text-sm text-slate-500"></span>
-          <span id="nota-acompanante" class="text-sm text-slate-500"></span>
-        </div>
+    <!-- S -->
+    <div class="nota-seccion">
+      <div class="nota-seccion-header">
+        <div class="nota-letra s">S</div>
+        <span class="nota-seccion-titulo">Subjetivo</span>
       </div>
-
-      <!-- S — Subjetivo -->
-      <div class="soap-section px-5 py-4 border-b border-slate-100">
-        <div class="soap-letter s">S</div>
-        <div class="soap-content">
-          <p class="soap-label">Motivo de consulta</p>
-          <p id="nota-motivo" class="soap-value"></p>
-          <p class="soap-label mt-3">Padecimiento actual</p>
-          <p id="nota-padecimiento" class="soap-value"></p>
-          <p class="soap-label mt-3">Antecedentes relevantes</p>
-          <p id="nota-antecedentes" class="soap-value"></p>
-        </div>
+      <div class="nota-campo">
+        <div class="nota-campo-label">Motivo de consulta</div>
+        <div class="nota-campo-valor" id="res-motivo"></div>
       </div>
-
-      <!-- O — Objetivo -->
-      <div class="soap-section px-5 py-4 border-b border-slate-100">
-        <div class="soap-letter o">O</div>
-        <div class="soap-content">
-          <p class="soap-label">Signos vitales</p>
-          <p id="nota-signos" class="soap-value"></p>
-          <p class="soap-label mt-3">Somatometría</p>
-          <p id="nota-somatometria" class="soap-value"></p>
-          <p class="soap-label mt-3">Exploración física</p>
-          <p id="nota-exploracion" class="soap-value"></p>
-        </div>
+      <div class="nota-campo">
+        <div class="nota-campo-label">Padecimiento actual</div>
+        <div class="nota-campo-valor" id="res-padecimiento"></div>
       </div>
-
-      <!-- A — Análisis -->
-      <div class="soap-section px-5 py-4 border-b border-slate-100">
-        <div class="soap-letter a">A</div>
-        <div class="soap-content">
-          <p class="soap-label">Impresión diagnóstica</p>
-          <p id="nota-diagnostico" class="soap-value font-medium"></p>
-          <p class="soap-label mt-3">Diagnósticos diferenciales</p>
-          <p id="nota-diferenciales" class="soap-value"></p>
-        </div>
-      </div>
-
-      <!-- P — Plan -->
-      <div class="soap-section px-5 py-4">
-        <div class="soap-letter p">P</div>
-        <div class="soap-content">
-          <p class="soap-label">Tratamiento</p>
-          <p id="nota-tratamiento" class="soap-value"></p>
-          <p class="soap-label mt-3">Indicaciones no farmacológicas</p>
-          <p id="nota-indicaciones" class="soap-value"></p>
-          <p class="soap-label mt-3">Estudios solicitados</p>
-          <p id="nota-estudios" class="soap-value"></p>
-          <p class="soap-label mt-3">Seguimiento</p>
-          <p id="nota-seguimiento" class="soap-value"></p>
-        </div>
-      </div>
-
-      <!-- Notas adicionales (si hay) -->
-      <div id="notas-extra-section" class="hidden px-5 py-4 bg-amber-50 border-t border-amber-100">
-        <p class="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">Notas adicionales</p>
-        <p id="nota-extra" class="text-sm text-amber-800"></p>
+      <div class="nota-campo">
+        <div class="nota-campo-label">Antecedentes relevantes</div>
+        <div class="nota-campo-valor" id="res-antecedentes"></div>
       </div>
     </div>
 
-    <!-- Transcripción colapsable -->
-    <details class="group">
-      <summary class="cursor-pointer flex items-center gap-2 text-sm text-slate-400 font-medium select-none
-                      list-none focus:outline-none">
-        <svg class="w-4 h-4 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+    <!-- O -->
+    <div class="nota-seccion">
+      <div class="nota-seccion-header">
+        <div class="nota-letra o">O</div>
+        <span class="nota-seccion-titulo">Objetivo</span>
+      </div>
+      <div class="nota-campo">
+        <div class="nota-campo-label">Signos vitales</div>
+        <div class="nota-campo-valor" id="res-signos"></div>
+      </div>
+      <div class="nota-campo">
+        <div class="nota-campo-label">Somatometría</div>
+        <div class="nota-campo-valor" id="res-somatometria"></div>
+      </div>
+      <div class="nota-campo">
+        <div class="nota-campo-label">Exploración física</div>
+        <div class="nota-campo-valor" id="res-exploracion"></div>
+      </div>
+    </div>
+
+    <!-- A -->
+    <div class="nota-seccion">
+      <div class="nota-seccion-header">
+        <div class="nota-letra a">A</div>
+        <span class="nota-seccion-titulo">Análisis</span>
+      </div>
+      <div class="nota-campo">
+        <div class="nota-campo-label">Impresión diagnóstica</div>
+        <div class="nota-campo-valor destacado" id="res-diagnostico"></div>
+      </div>
+      <div class="nota-campo">
+        <div class="nota-campo-label">Diagnósticos diferenciales</div>
+        <div class="nota-campo-valor" id="res-diferenciales"></div>
+      </div>
+    </div>
+
+    <!-- P -->
+    <div class="nota-seccion">
+      <div class="nota-seccion-header">
+        <div class="nota-letra p">P</div>
+        <span class="nota-seccion-titulo">Plan</span>
+      </div>
+      <div class="nota-campo">
+        <div class="nota-campo-label">Tratamiento</div>
+        <div class="nota-campo-valor" id="res-tratamiento"></div>
+      </div>
+      <div class="nota-campo">
+        <div class="nota-campo-label">Indicaciones no farmacológicas</div>
+        <div class="nota-campo-valor" id="res-indicaciones"></div>
+      </div>
+      <div class="nota-campo">
+        <div class="nota-campo-label">Estudios solicitados</div>
+        <div class="nota-campo-valor" id="res-estudios"></div>
+      </div>
+      <div class="nota-campo">
+        <div class="nota-campo-label">Seguimiento</div>
+        <div class="nota-campo-valor" id="res-seguimiento"></div>
+      </div>
+    </div>
+
+    <!-- Notas extra -->
+    <div id="res-notas-wrap" class="nota-seccion hidden" style="background:#fffbeb;">
+      <div class="nota-campo-label" style="color:#92400e;margin-bottom:6px;">Notas adicionales</div>
+      <div class="nota-campo-valor" id="res-notas" style="color:#92400e;"></div>
+    </div>
+
+  </div><!-- /nota-card -->
+
+  <!-- Transcripción colapsable -->
+  <div class="transcripcion-wrap">
+    <details>
+      <summary>
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
         </svg>
         Ver transcripción completa
       </summary>
-      <div class="mt-3 bg-white rounded-xl border border-slate-200 p-4">
-        <p id="transcripcion-texto" class="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap font-mono"></p>
-      </div>
+      <div class="transcripcion-content" id="transcripcion-texto"></div>
     </details>
-
-    <!-- Disclaimer -->
-    <p class="text-xs text-slate-400 text-center pb-4">
-      Esta app no almacena audio ni notas. Todo se borra al cerrar la pestaña.
-    </p>
-
   </div>
 
-
-  <!-- ═══════════════════════════════════════════════
-       ERROR TOAST
-  ════════════════════════════════════════════════ -->
-  <div id="error-toast"
-    class="fixed bottom-6 left-1/2 -translate-x-1/2 hidden z-50
-           bg-red-600 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-xl
-           max-w-sm w-full mx-4 text-center">
-    <span id="error-message"></span>
+  <!-- CTA Luciana -->
+  <div class="cta-luciana">
+    <div class="cta-luciana-text">
+      <h3>¿Quieres más herramientas así?</h3>
+      <p>Luciana automatiza la recepción y documentación de tu consultorio.</p>
+    </div>
+    <a href="https://lucianaia.com" target="_blank" class="cta-luciana-btn">Ver más →</a>
   </div>
 
+  <p style="text-align:center;font-size:11px;color:var(--gray-300);padding:0 16px 32px;font-family:'JetBrains Mono',monospace;">
+    Tu audio nunca sale de tu dispositivo · Luciana no almacena datos
+  </p>
 
-  <script src="app.js"></script>
+</div><!-- /screen-result -->
+
+
+<!-- Toast de error -->
+<div id="error-toast" style="display:none;"></div>
+
+<script>
+const WORKER_URL = "https://pediatra-scribe-api.lucandres.workers.dev";
+const MAX_RECORDING_MINUTES = 20;
+const WARNING_MINUTES = 18;
+
+const state = {
+  isRecording: false,
+  mediaRecorder: null,
+  audioChunks: [],
+  audioBlob: null,
+  timerInterval: null,
+  visualizerRAF: null,
+  analyser: null,
+  audioCtx: null,
+  transcripcion: "",
+  notaJson: null,
+};
+
+const $ = id => document.getElementById(id);
+const screens = { record: $("screen-record"), processing: $("screen-processing"), result: $("screen-result") };
+
+function showScreen(name) {
+  Object.values(screens).forEach(el => el.classList.add("hidden"));
+  screens[name].classList.remove("hidden");
+  window.scrollTo(0, 0);
+}
+
+function formatTime(s) {
+  return `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+}
+function formatBytes(b) {
+  return b < 1048576 ? `${(b/1024).toFixed(0)} KB` : `${(b/1048576).toFixed(1)} MB`;
+}
+
+function showError(msg, ms = 5000) {
+  const t = $("error-toast");
+  t.textContent = msg;
+  t.style.display = "block";
+  clearTimeout(showError._t);
+  showError._t = setTimeout(() => t.style.display = "none", ms);
+}
+
+// ── Grabación ──────────────────────────────────────────────────────────────
+
+function getBestMime() {
+  return ["audio/webm;codecs=opus","audio/ogg;codecs=opus","audio/webm","audio/mp4"]
+    .find(t => MediaRecorder.isTypeSupported(t)) || "";
+}
+
+async function startRecording() {
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: { channelCount:1, sampleRate:16000, echoCancellation:true, noiseSuppression:true, autoGainControl:true }
+    });
+  } catch(err) {
+    showError(err.name === "NotAllowedError"
+      ? "Permiso de micrófono denegado. Actívalo en la configuración del navegador."
+      : `No se pudo acceder al micrófono: ${err.message}`, 8000);
+    return;
+  }
+
+  const mime = getBestMime();
+  const opts = { audioBitsPerSecond: 16000 };
+  if (mime) opts.mimeType = mime;
+  try { state.mediaRecorder = new MediaRecorder(stream, opts); }
+  catch { state.mediaRecorder = new MediaRecorder(stream); }
+
+  state.audioChunks = [];
+  state.mediaRecorder.ondataavailable = e => { if(e.data.size > 0) state.audioChunks.push(e.data); };
+  state.mediaRecorder.onstop = onStop;
+  state.mediaRecorder.start(1000);
+  state.isRecording = true;
+
+  $("btn-record").classList.add("recording");
+  $("icon-mic").classList.add("hidden");
+  $("icon-stop").classList.remove("hidden");
+  $("btn-record-label").textContent = "Detener";
+  $("timer").classList.remove("hidden");
+  $("viz-container").classList.remove("hidden");
+  $("size-indicator").classList.remove("hidden");
+  $("process-zone").classList.add("hidden");
+
+  let elapsed = 0;
+  state.timerInterval = setInterval(() => {
+    elapsed++;
+    $("timer").textContent = formatTime(elapsed);
+    const bytes = state.audioChunks.reduce((s,c) => s+c.size, 0);
+    $("size-indicator").textContent = `Audio: ${formatBytes(bytes)}`;
+    if (elapsed >= WARNING_MINUTES * 60) $("duration-warning").classList.remove("hidden");
+    if (elapsed >= MAX_RECORDING_MINUTES * 60) {
+      showError(`Grabación detenida automáticamente al llegar a ${MAX_RECORDING_MINUTES} minutos.`, 6000);
+      stopRecording();
+    }
+  }, 1000);
+
+  setupViz(stream);
+}
+
+function stopRecording() {
+  if (!state.isRecording || !state.mediaRecorder) return;
+  state.mediaRecorder.stop();
+  state.mediaRecorder.stream.getTracks().forEach(t => t.stop());
+  state.isRecording = false;
+  clearInterval(state.timerInterval);
+  cancelAnimationFrame(state.visualizerRAF);
+  if (state.audioCtx) { state.audioCtx.close().catch(()=>{}); state.audioCtx = null; }
+}
+
+function onStop() {
+  const mime = state.mediaRecorder?.mimeType || "audio/webm";
+  state.audioBlob = new Blob(state.audioChunks, { type: mime });
+  state.audioChunks = [];
+
+  $("btn-record").classList.remove("recording");
+  $("icon-mic").classList.remove("hidden");
+  $("icon-stop").classList.add("hidden");
+  $("btn-record-label").textContent = "Tocar para grabar";
+  $("viz-container").classList.add("hidden");
+  $("duration-warning").classList.add("hidden");
+  document.querySelectorAll(".viz-bar").forEach(b => b.style.height = "4px");
+
+  $("size-indicator").textContent = `Audio grabado: ${formatBytes(state.audioBlob.size)}`;
+  $("process-zone").classList.remove("hidden");
+}
+
+function discardRecording() {
+  state.audioBlob = null;
+  $("process-zone").classList.add("hidden");
+  $("timer").classList.add("hidden");
+  $("timer").textContent = "00:00";
+  $("size-indicator").classList.add("hidden");
+}
+
+// ── Visualizador ───────────────────────────────────────────────────────────
+
+function setupViz(stream) {
+  try {
+    state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = state.audioCtx.createMediaStreamSource(stream);
+    state.analyser = state.audioCtx.createAnalyser();
+    state.analyser.fftSize = 32;
+    src.connect(state.analyser);
+    const bars = document.querySelectorAll(".viz-bar");
+    const data = new Uint8Array(state.analyser.frequencyBinCount);
+    (function draw() {
+      state.visualizerRAF = requestAnimationFrame(draw);
+      state.analyser.getByteFrequencyData(data);
+      bars.forEach((b,i) => {
+        const idx = Math.floor(i/bars.length * data.length);
+        b.style.height = `${Math.max(4, Math.round(data[idx]/255*36))}px`;
+      });
+    })();
+  } catch {}
+}
+
+// ── Procesamiento ─────────────────────────────────────────────────────────
+
+async function processAudio() {
+  if (!state.audioBlob) { showError("No hay audio grabado."); return; }
+
+  showScreen("processing");
+  $("processing-status").textContent = "Transcribiendo audio...";
+  const timer = setTimeout(() => { $("processing-status").textContent = "Generando nota clínica..."; }, 7000);
+
+  const form = new FormData();
+  form.append("audio", state.audioBlob, "consulta.webm");
+
+  let data;
+  try {
+    const res = await fetch(WORKER_URL, { method:"POST", body:form });
+    data = await res.json();
+  } catch {
+    clearTimeout(timer);
+    showScreen("record");
+    showError("No se pudo conectar al servidor. Verifica tu conexión.", 8000);
+    return;
+  }
+
+  clearTimeout(timer);
+
+  if (!data.ok) {
+    showScreen("record");
+    showError(data.error || "Error en el servidor.", 8000);
+    return;
+  }
+
+  state.transcripcion = data.transcripcion || "";
+  $("transcripcion-texto").textContent = state.transcripcion;
+  parseAndRender(data.soap || "");
+}
+
+// ── Parseo y render ────────────────────────────────────────────────────────
+
+function tryJSON(s) { try { return JSON.parse(s.trim()); } catch { return null; } }
+
+function parseAndRender(jsonStr) {
+  let nota = tryJSON(jsonStr);
+  if (!nota) {
+    const s = jsonStr.replace(/^[\s\S]*?```(?:json)?\s*/i,"").replace(/\s*```[\s\S]*$/i,"").trim();
+    nota = tryJSON(s);
+  }
+  if (!nota) {
+    const f = jsonStr.indexOf("{"), l = jsonStr.lastIndexOf("}");
+    if (f !== -1 && l > f) nota = tryJSON(jsonStr.slice(f, l+1));
+  }
+  if (!nota) {
+    showScreen("record");
+    showError("La nota generada no tiene formato válido. Intenta de nuevo.", 8000);
+    return;
+  }
+  state.notaJson = nota;
+  renderNota(nota);
+  showScreen("result");
+}
+
+function setVal(id, val, cls = "") {
+  const el = $(id);
+  if (!el) return;
+  const v = val && val !== "No consignado" ? val : "No consignado";
+  el.textContent = v;
+  el.className = el.className.replace(/\bvacio\b/,"").trim();
+  if (v === "No consignado") el.classList.add("vacio");
+  if (cls) el.classList.add(cls);
+}
+
+function renderNota(n) {
+  const p = n.paciente || {}, s = n.subjetivo || {}, o = n.objetivo || {}, a = n.analisis || {}, pl = n.plan || {};
+  const nc = v => v && v !== "No consignado" ? v : "";
+
+  $("res-medico").innerHTML = nc(n.medico) ? `<strong>${nc(n.medico)}</strong>` : "";
+  $("res-fecha").textContent = nc(n.fecha_aproximada) ? `Fecha: ${nc(n.fecha_aproximada)}` : "";
+
+  setVal("res-nombre", p.nombre);
+  $("res-edad-sexo").textContent = [nc(p.edad), nc(p.sexo)].filter(Boolean).join(" · ");
+  $("res-acompanante").textContent = nc(p.acompanante) ? `Acompañante: ${nc(p.acompanante)}` : "";
+
+  setVal("res-motivo", s.motivo_consulta);
+  setVal("res-padecimiento", s.padecimiento_actual);
+  setVal("res-antecedentes", s.antecedentes_relevantes);
+
+  setVal("res-signos", o.signos_vitales);
+  setVal("res-somatometria", o.somatometria);
+  setVal("res-exploracion", o.exploracion_fisica);
+
+  setVal("res-diagnostico", a.impresion_diagnostica);
+  setVal("res-diferenciales", a.diagnosticos_diferenciales);
+
+  setVal("res-tratamiento", pl.tratamiento);
+  setVal("res-indicaciones", pl.indicaciones_no_farmacologicas);
+  setVal("res-estudios", pl.estudios_solicitados);
+  setVal("res-seguimiento", pl.seguimiento);
+
+  const extra = nc(n.notas_adicionales);
+  $("res-notas-wrap").classList.toggle("hidden", !extra);
+  if (extra) $("res-notas").textContent = extra;
+}
+
+// ── Copiar nota (texto plano con formato) ──────────────────────────────────
+
+function buildPlainText(n) {
+  const p = n.paciente || {}, s = n.subjetivo || {}, o = n.objetivo || {}, a = n.analisis || {}, pl = n.plan || {};
+  const nc = v => (v && v !== "No consignado") ? v : "No consignado";
+  const line = "─".repeat(42);
+
+  return [
+    "NOTA DE CONSULTA PEDIÁTRICA",
+    nc(n.medico) !== "No consignado" ? `Médico: ${nc(n.medico)}` : "",
+    nc(n.fecha_aproximada) !== "No consignado" ? `Fecha: ${nc(n.fecha_aproximada)}` : "",
+    "",
+    "PACIENTE",
+    `Nombre: ${nc(p.nombre)}`,
+    `Edad: ${nc(p.edad)}  |  Sexo: ${nc(p.sexo)}`,
+    `Acompañante: ${nc(p.acompanante)}`,
+    "",
+    line,
+    "S — SUBJETIVO",
+    line,
+    `Motivo de consulta:\n${nc(s.motivo_consulta)}`,
+    "",
+    `Padecimiento actual:\n${nc(s.padecimiento_actual)}`,
+    "",
+    `Antecedentes relevantes:\n${nc(s.antecedentes_relevantes)}`,
+    "",
+    line,
+    "O — OBJETIVO",
+    line,
+    `Signos vitales: ${nc(o.signos_vitales)}`,
+    `Somatometría: ${nc(o.somatometria)}`,
+    `Exploración física:\n${nc(o.exploracion_fisica)}`,
+    "",
+    line,
+    "A — ANÁLISIS",
+    line,
+    `Impresión diagnóstica: ${nc(a.impresion_diagnostica)}`,
+    `Dx diferenciales: ${nc(a.diagnosticos_diferenciales)}`,
+    "",
+    line,
+    "P — PLAN",
+    line,
+    `Tratamiento:\n${nc(pl.tratamiento)}`,
+    "",
+    `Indicaciones: ${nc(pl.indicaciones_no_farmacologicas)}`,
+    `Estudios: ${nc(pl.estudios_solicitados)}`,
+    `Seguimiento: ${nc(pl.seguimiento)}`,
+    nc(n.notas_adicionales) !== "No consignado" ? `\nNotas: ${nc(n.notas_adicionales)}` : "",
+    "",
+    "─".repeat(42),
+    "Generado con Escribano Pediátrico · lucianaia.com",
+    "Tu audio nunca salió de tu dispositivo.",
+  ].filter(l => l !== undefined).join("\n").replace(/\n{3,}/g, "\n\n");
+}
+
+async function copyNota() {
+  if (!state.notaJson) return;
+  const plain = buildPlainText(state.notaJson);
+  try {
+    await navigator.clipboard.writeText(plain);
+  } catch {
+    const ta = document.createElement("textarea");
+    ta.value = plain; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select(); document.execCommand("copy");
+    document.body.removeChild(ta);
+  }
+  const btn = $("btn-copy"), lbl = $("btn-copy-label");
+  btn.classList.add("copied"); lbl.textContent = "¡Copiado!";
+  setTimeout(() => { btn.classList.remove("copied"); lbl.textContent = "Copiar nota"; }, 2500);
+}
+
+// ── Nueva consulta ─────────────────────────────────────────────────────────
+
+function resetApp() {
+  state.audioBlob = null; state.transcripcion = ""; state.notaJson = null;
+  $("timer").textContent = "00:00"; $("timer").classList.add("hidden");
+  $("process-zone").classList.add("hidden"); $("size-indicator").classList.add("hidden");
+  $("duration-warning").classList.add("hidden");
+  $("btn-record").classList.remove("recording");
+  $("icon-mic").classList.remove("hidden"); $("icon-stop").classList.add("hidden");
+  $("btn-record-label").textContent = "Tocar para grabar";
+  document.querySelectorAll(".viz-bar").forEach(b => b.style.height = "4px");
+  showScreen("record");
+}
+
+// ── Listeners ──────────────────────────────────────────────────────────────
+
+$("btn-record").addEventListener("click", () => state.isRecording ? stopRecording() : startRecording());
+$("btn-process").addEventListener("click", processAudio);
+$("btn-discard").addEventListener("click", discardRecording);
+$("btn-copy").addEventListener("click", copyNota);
+$("btn-nueva").addEventListener("click", resetApp);
+
+// ── Init ───────────────────────────────────────────────────────────────────
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+showScreen("record");
+</script>
 </body>
 </html>
