@@ -63,12 +63,13 @@ ESTRUCTURA DE SALIDA OBLIGATORIA:
 function corsHeaders(env, request) {
   const origin = request.headers.get("Origin") || "";
   const allowed = env.ALLOWED_ORIGIN || "*";
+  const allowedList = allowed.split(",").map(s => s.trim());
 
-  // En desarrollo se permite localhost
   const isDev = env.ENVIRONMENT === "development";
   const isAllowed =
     allowed === "*" ||
-    origin === allowed ||
+    allowedList.includes(origin) ||
+    allowedList.some(o => origin.startsWith(o)) ||
     (isDev && origin.startsWith("http://localhost"));
 
   return {
