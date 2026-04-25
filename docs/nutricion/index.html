@@ -227,7 +227,24 @@
     body[data-rec="paused"] .rec-icon-play  { opacity: 1; transform: scale(1); }
 
     /* Botón Finalizar — aparece durante grabación y pausa */
-    /* btn-finalizar manejado via JS con style.display */
+    /* Botón Finalizar — en rec-foot, sin absoluto, sin layout shift */
+    .btn-finalizar {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--navy-deep); color: var(--cream);
+      font-family: var(--sans); font-size: 13px; font-weight: 600;
+      padding: 11px 26px; border-radius: 999px;
+      border: none; cursor: pointer;
+      opacity: 0; pointer-events: none;
+      transition: opacity .3s ease, background .3s ease;
+      white-space: nowrap; margin-top: 10px;
+    }
+    body[data-rec="on"] .btn-finalizar,
+    body[data-rec="paused"] .btn-finalizar {
+      opacity: 1; pointer-events: auto;
+    }
+    body[data-rec="paused"] .btn-finalizar {
+      background: var(--coral);
+    }
     .stop-square {
       width: calc(var(--btn-size) * 0.32);
       height: calc(var(--btn-size) * 0.32);
@@ -504,14 +521,9 @@
       <div class="wave" id="wave" aria-hidden="true"></div>
     </div>
 
-    <div class="rec-foot">
+    <div class="rec-foot" style="display:flex;flex-direction:column;align-items:center;">
       <div class="hint" id="rec-hint">TAP TO START · GRABACIÓN LOCAL</div>
-      <button id="btn-finalizar" style="
-        display:none; align-items:center; gap:8px; margin-top:12px;
-        background:var(--navy-deep); color:var(--cream);
-        font-family:var(--sans); font-size:14px; font-weight:600;
-        padding:12px 28px; border-radius:999px; border:none; cursor:pointer;
-      ">
+      <button class="btn-finalizar" id="btn-finalizar">
         Finalizar consulta
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
       </button>
@@ -692,22 +704,16 @@ const setRecUI = on => {
   const lede  = $('rec-lede');
   const hint  = $('rec-hint');
   const tag   = $('rec-tag');
-  const btnFin = $('btn-finalizar');
   if (on) {
     title.innerHTML = 'Escuchando<br/>cada palabra.';
     lede.textContent = 'El audio se procesa al terminar y se descarta de inmediato. Nunca se almacena.';
     hint.textContent = 'TOCA PARA PAUSAR';
     tag.textContent = 'GRABANDO';
-    hint.style.display = 'block';
-    btnFin.style.display = 'flex';
-    btnFin.style.background = 'var(--navy-deep)';
   } else {
     title.innerHTML = 'Usted atienda<br/>al paciente,<br/>yo tomo nota<br/>de todo.';
     lede.textContent = 'Presiona el botón para grabar la consulta. Generaremos tu evaluación nutricional automáticamente.';
     hint.textContent = 'TAP TO START · GRABACIÓN LOCAL';
     tag.textContent = 'LISTO';
-    hint.style.display = 'block';
-    btnFin.style.display = 'none';
   }
 };
 
