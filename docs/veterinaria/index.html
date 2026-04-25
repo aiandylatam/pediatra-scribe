@@ -1,0 +1,1375 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://pediatra-scribe-api.lucandres.workers.dev; img-src 'self' data:; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <meta name="theme-color" content="#F7F4EE"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="apple-mobile-web-app-title" content="Escribano Veterinario"/>
+  <meta name="description" content="Dicta tu consulta y recibe la nota clínica veterinaria al instante. Herramienta gratuita de Luciana."/>
+  <title>Escribano Veterinario — Luciana</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="../icons/icon-192.png"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    /* ─── BRAND TOKENS ─── */
+    :root {
+      --navy:        #1A4F82;
+      --navy-deep:   #0F3259;
+      --navy-darker: #0a223f;
+      --coral:       #E85D3A;
+      --coral-soft:  #F08465;
+      --cream:       #F7F4EE;
+      --cream-warm:  #EFE9DD;
+      --cream-deep:  #E5DECF;
+      --ink:         #1B1F26;
+      --ink-soft:    #4A525E;
+      --muted:       #8A8F99;
+      --line:        rgba(15,50,89,0.10);
+      --line-strong: rgba(15,50,89,0.18);
+      --serif: 'DM Serif Display', Georgia, serif;
+      --sans:  'DM Sans', system-ui, -apple-system, sans-serif;
+      --mono:  'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bot: env(safe-area-inset-bottom, 0px);
+      --btn-size: 140px;
+    }
+    *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+    html, body { height: 100%; height: 100dvh; }
+    body {
+      font-family: var(--sans); color: var(--ink);
+      background: var(--cream);
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+    button { font: inherit; color: inherit; border: none; cursor: pointer; background: none; }
+
+    /* ─── APP SHELL ─── */
+    #app {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      background: var(--cream);
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bot);
+    }
+    .screen {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      padding-top: calc(var(--safe-top) + 58px);
+      padding-bottom: 8px;
+      opacity: 0; pointer-events: none;
+      transition: opacity .3s ease;
+    }
+    .screen.is-active { opacity: 1; pointer-events: auto; }
+
+    /* ─── TOP BAR ─── */
+    .topbar {
+      position: absolute; top: var(--safe-top); left: 0; right: 0;
+      height: 58px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 22px;
+      z-index: 10;
+    }
+    .brand-mark {
+      width: 36px; height: 36px; flex-shrink: 0;
+    }
+    .brand-text {
+      font-family: var(--mono); font-size: 11px;
+      color: var(--ink-soft); letter-spacing: 0.14em;
+    }
+    .icon-btn {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: rgba(15,50,89,0.06); color: var(--navy-deep);
+      display: grid; place-items: center;
+      transition: background .15s, transform .1s;
+    }
+    .icon-btn:active { transform: scale(0.93); background: rgba(15,50,89,0.12); }
+
+    /* ─── EDITORIAL TYPOGRAPHY ─── */
+    .eyebrow {
+      font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.2em;
+      color: var(--coral); margin-bottom: 16px;
+    }
+    .eyebrow.muted { color: var(--ink-soft); }
+    .display {
+      font-family: var(--serif); font-size: 34px; line-height: 1.05;
+      color: var(--navy-deep); letter-spacing: -0.012em;
+    }
+    .lede {
+      font-family: var(--sans); font-size: 14px; line-height: 1.55;
+      color: var(--ink-soft); margin-top: 16px; max-width: 300px;
+      margin-left: auto; margin-right: auto;
+    }
+
+    /* ─── RECORD SCREEN ─── */
+    .rec-head {
+      padding: 20px 28px 0; text-align: center;
+      min-height: 170px;
+    }
+    .rec-stage {
+      flex: 1; position: relative;
+      min-height: 290px;
+    }
+
+    /* Timer pill — always visible, fades in context */
+    .timer-row {
+      position: absolute; top: 8px; left: 50%;
+      transform: translateX(-50%);
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 8px 16px; border-radius: 999px;
+      background: rgba(15,50,89,0.06);
+      transition: background .3s;
+      white-space: nowrap;
+    }
+    body[data-rec="off"] .timer-row { opacity: 0; pointer-events: none; }
+    body[data-rec="on"] .timer-row { background: rgba(232,93,58,0.10); }
+    .timer-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--muted); transition: background .3s;
+    }
+    body[data-rec="on"] .timer-dot {
+      background: var(--coral);
+      animation: dot-blink 1.1s ease-in-out infinite;
+    }
+    @keyframes dot-blink { 50% { opacity: 0.35; } }
+    .timer-val {
+      font-family: var(--mono); font-size: 13px; font-weight: 500;
+      color: var(--navy-deep); letter-spacing: 0.05em;
+      min-width: 44px; text-align: center;
+      transition: color .3s;
+    }
+    body[data-rec="on"] .timer-val { color: var(--coral); }
+    .timer-tag {
+      font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.16em;
+      color: var(--muted); transition: color .3s;
+    }
+    body[data-rec="on"] .timer-tag { color: var(--coral); }
+
+    /* Button group — fixed position, never reflows */
+    .rec-btn-wrap {
+      position: absolute; left: 50%; top: 80px;
+      transform: translateX(-50%);
+      width: calc(var(--btn-size) + 16px);
+      height: calc(var(--btn-size) + 16px);
+      display: grid; place-items: center;
+      z-index: 2;
+    }
+    /* Ambient glow */
+    .rec-glow {
+      position: absolute; inset: -20px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(232,93,58,0.40) 0%, rgba(232,93,58,0) 68%);
+      animation: breathe 3.2s ease-in-out infinite;
+    }
+    @keyframes breathe {
+      0%,100% { transform: scale(0.92); opacity: 0.55; }
+      50%      { transform: scale(1.10); opacity: 0.85; }
+    }
+    /* Halo rings */
+    .halo {
+      position: absolute; left: 50%; top: 50%;
+      width: calc(var(--btn-size) * 1.55);
+      height: calc(var(--btn-size) * 1.55);
+      translate: -50% -50%;
+      border-radius: 50%;
+      border: 1.5px solid var(--coral); opacity: 0;
+      animation: halo-emit 2.8s cubic-bezier(0.16,0.84,0.44,1) infinite;
+      animation-play-state: paused;
+    }
+    body[data-rec="on"] .halo { animation-play-state: running; }
+    .halo:nth-child(2) { animation-delay: 0.93s; }
+    .halo:nth-child(3) { animation-delay: 1.86s; }
+    @keyframes halo-emit {
+      0%   { transform: scale(0.6); opacity: 0; border-width: 2.2px; }
+      18%  { opacity: 0.55; }
+      100% { transform: scale(2.2); opacity: 0; border-width: 0.6px; }
+    }
+    /* The button */
+    .rec-btn {
+      position: relative;
+      width: var(--btn-size); height: var(--btn-size);
+      border-radius: 50%; color: var(--cream);
+      background: radial-gradient(circle at 30% 28%, #F08465 0%, #E85D3A 70%, #C84826 100%);
+      box-shadow:
+        0 14px 36px rgba(232,93,58,0.45),
+        inset 0 -3px 0 rgba(0,0,0,0.14),
+        inset 0 2px 0 rgba(255,255,255,0.18);
+      transition: transform .35s cubic-bezier(.2,.8,.2,1), border-radius .35s cubic-bezier(.2,.8,.2,1);
+      display: grid; place-items: center;
+    }
+    .rec-btn:active { transform: scale(0.96); }
+    body[data-rec="on"] .rec-btn {
+      border-radius: 30%;
+      background: radial-gradient(circle at 30% 28%, #F08465 0%, #E85D3A 65%, #B83C1F 100%);
+    }
+    body[data-rec="paused"] .rec-btn {
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 28%, #6B90B8 0%, #1A4F82 70%, #0F3259 100%);
+    }
+    /* Icon cross-fade — 3 estados */
+    .rec-icon {
+      position: absolute; inset: 0;
+      display: grid; place-items: center;
+      transition: opacity .25s ease, transform .35s cubic-bezier(.2,.8,.2,1);
+    }
+    .rec-icon-mic   { opacity: 1; }
+    .rec-icon-pause { opacity: 0; transform: scale(0.6); }
+    .rec-icon-play  { opacity: 0; transform: scale(0.6); }
+
+    body[data-rec="on"] .rec-icon-mic   { opacity: 0; transform: scale(0.7); }
+    body[data-rec="on"] .rec-icon-pause { opacity: 1; transform: scale(1); }
+    body[data-rec="on"] .rec-icon-play  { opacity: 0; transform: scale(0.6); }
+
+    body[data-rec="paused"] .rec-icon-mic   { opacity: 0; transform: scale(0.7); }
+    body[data-rec="paused"] .rec-icon-pause { opacity: 0; transform: scale(0.6); }
+    body[data-rec="paused"] .rec-icon-play  { opacity: 1; transform: scale(1); }
+
+    /* Botón Finalizar — en rec-foot, sin absoluto, sin layout shift */
+    .btn-finalizar {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--navy-deep); color: var(--cream);
+      font-family: var(--sans); font-size: 13px; font-weight: 600;
+      padding: 11px 26px; border-radius: 999px;
+      border: none; cursor: pointer;
+      opacity: 0; pointer-events: none;
+      transition: opacity .3s ease, background .3s ease;
+      white-space: nowrap; margin-top: 10px;
+    }
+    body[data-rec="on"] .btn-finalizar,
+    body[data-rec="paused"] .btn-finalizar {
+      opacity: 1; pointer-events: auto;
+    }
+    body[data-rec="paused"] .btn-finalizar {
+      background: var(--coral);
+    }
+    .stop-square {
+      width: calc(var(--btn-size) * 0.32);
+      height: calc(var(--btn-size) * 0.32);
+      border-radius: calc(var(--btn-size) * 0.08);
+      background: var(--cream);
+    }
+
+    /* Waveform */
+    .wave {
+      position: absolute; left: 50%; top: calc(80px + var(--btn-size) + 28px);
+      transform: translateX(-50%);
+      display: flex; align-items: center; gap: 4px;
+      height: 44px; justify-content: center;
+      opacity: 0.18; transition: opacity .5s ease;
+      pointer-events: none;
+    }
+    body[data-rec="on"] .wave { opacity: 1; }
+    .wave .bar {
+      width: 3px; height: 20px;
+      background: var(--navy-deep); border-radius: 2px;
+      transform-origin: center;
+      animation: wave-bar 1.2s ease-in-out infinite;
+    }
+    body[data-rec="on"] .wave .bar { background: var(--coral); }
+    @keyframes wave-bar { 0%,100% { transform: scaleY(0.25); } 50% { transform: scaleY(1); } }
+
+    /* Footer hint */
+    .rec-foot { padding: 0 28px 6px; text-align: center; }
+    .hint { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.16em; }
+
+    /* ─── PROCESSING SCREEN ─── */
+    .proc-head { padding: 20px 28px 0; text-align: center; }
+    .proc-list { padding: 32px 28px 0; flex: 1; max-width: 360px; margin: 0 auto; width: 100%; }
+    .proc-step {
+      display: flex; align-items: center; gap: 16px;
+      padding: 18px 0; border-bottom: 1px solid var(--line);
+      opacity: 0.35; transition: opacity .35s ease;
+    }
+    .proc-step.is-active, .proc-step.is-done { opacity: 1; }
+    .proc-step .ind { width: 26px; height: 26px; flex-shrink: 0; position: relative; }
+    .proc-step .ring-idle, .proc-step .ring-active, .proc-step .check {
+      position: absolute; inset: 2px; opacity: 0; transition: opacity .25s;
+    }
+    .proc-step .ring-idle  { border: 2px solid var(--line-strong); border-radius: 50%; opacity: 1; }
+    .proc-step.is-active .ring-idle  { opacity: 0; }
+    .proc-step.is-active .ring-active { opacity: 1; }
+    .proc-step.is-done .ring-idle     { opacity: 0; }
+    .proc-step.is-done .check         { opacity: 1; }
+    .proc-step .ring-active {
+      border: 2px solid var(--navy); border-top-color: transparent;
+      border-radius: 50%; animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .proc-step .label {
+      font-family: var(--sans); font-size: 16px; font-weight: 500; color: var(--ink-soft);
+    }
+    .proc-step.is-active .label, .proc-step.is-done .label { color: var(--ink); font-weight: 600; }
+
+    /* ─── RESULT SCREEN ─── */
+    .result-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 4px 22px 12px;
+    }
+    .result-date {
+      font-family: var(--mono); font-size: 10px; color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+    .result-head { padding: 4px 28px 16px; }
+    .patient-name {
+      font-family: var(--serif); font-size: 28px; line-height: 1.08;
+      color: var(--navy-deep); letter-spacing: -0.01em;
+    }
+    .patient-meta {
+      display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap;
+      font-family: var(--mono); font-size: 11px; color: var(--ink-soft);
+      letter-spacing: 0.05em;
+    }
+    .patient-meta .sep { color: var(--line-strong); }
+
+    .body-scroll {
+      flex: 1; overflow-y: auto; padding: 8px 28px 20px;
+      scrollbar-width: none;
+    }
+    .body-scroll::-webkit-scrollbar { display: none; }
+
+    /* SOAP sections */
+    .soap-section {
+      padding: 18px 0; border-bottom: 1px solid var(--line);
+      opacity: 0; transform: translateY(20px);
+      transition: opacity .55s cubic-bezier(.2,.7,.2,1), transform .55s cubic-bezier(.2,.7,.2,1);
+    }
+    .soap-section.is-visible { opacity: 1; transform: translateY(0); }
+    .soap-section:last-of-type { border-bottom: none; }
+    .soap-marker { display: flex; align-items: baseline; gap: 14px; margin-bottom: 10px; }
+    .soap-letter {
+      font-family: var(--serif); font-size: 28px; line-height: 1;
+      color: var(--coral); letter-spacing: -0.01em;
+    }
+    .soap-label {
+      font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em;
+      color: var(--ink-soft); text-transform: uppercase; margin-bottom: 3px;
+    }
+    .soap-summary {
+      font-family: var(--serif); font-size: 17px; line-height: 1.3;
+      color: var(--navy-deep); letter-spacing: -0.005em;
+    }
+    .soap-body { padding-left: 42px; }
+    .soap-body p {
+      font-family: var(--sans); font-size: 14.5px; line-height: 1.6;
+      color: var(--ink); margin: 0 0 10px;
+    }
+    .soap-body .nc { color: var(--muted); font-style: italic; }
+    body.is-editing .soap-body p {
+      background: rgba(232,93,58,0.06); padding: 7px 10px;
+      border-radius: 6px; border-left: 2px solid var(--coral);
+    }
+
+    /* CTA footnote */
+    .cta {
+      display: flex; flex-direction: column; gap: 3px;
+      margin: 24px 0 8px; padding: 14px 0 0;
+      border-top: 1px solid var(--line);
+      text-decoration: none; color: var(--ink);
+      opacity: 0; transform: translateY(20px);
+      transition: opacity .55s cubic-bezier(.2,.7,.2,1), transform .55s cubic-bezier(.2,.7,.2,1);
+    }
+    .cta.is-visible { opacity: 1; transform: translateY(0); }
+    .cta-eyebrow {
+      font-family: var(--mono); font-size: 9px; color: var(--muted);
+      letter-spacing: 0.18em;
+    }
+    .cta h3 {
+      font-family: var(--sans); font-size: 13px; line-height: 1.4;
+      font-weight: 500; color: var(--ink);
+    }
+    .cta-link {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-family: var(--mono); font-size: 11px; font-weight: 500;
+      color: var(--navy); letter-spacing: 0.04em;
+      margin-top: 1px; transition: color .2s;
+    }
+    .cta:hover .cta-link { color: var(--coral); }
+
+    /* Actions bar */
+    .actions {
+      display: flex; gap: 10px;
+      padding: 14px 22px calc(16px + var(--safe-bot));
+      border-top: 1px solid var(--line);
+      background: var(--cream);
+    }
+    .btn {
+      flex: 1; height: 50px; border-radius: 14px;
+      font-family: var(--sans); font-size: 14px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: transform .1s, opacity .15s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-ghost {
+      background: transparent; color: var(--navy-deep);
+      box-shadow: inset 0 0 0 1.5px var(--line-strong);
+    }
+    .btn-primary {
+      background: var(--coral); color: var(--cream);
+      box-shadow: 0 6px 18px rgba(232,93,58,0.32);
+    }
+    .btn.copied { background: #16a34a; color: white; box-shadow: none; }
+
+    /* Toast */
+    .toast {
+      position: fixed; left: 50%; bottom: calc(80px + var(--safe-bot));
+      transform: translateX(-50%) translateY(8px);
+      background: rgba(15,34,63,0.92); color: var(--cream);
+      padding: 12px 20px; border-radius: 16px;
+      font-family: var(--sans); font-size: 13px; font-weight: 500;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+      opacity: 0; pointer-events: none; z-index: 100;
+      transition: opacity .25s ease, transform .25s ease;
+      width: calc(100vw - 48px); max-width: 340px;
+      text-align: center; line-height: 1.45;
+    }
+    .toast.is-visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ─── PRINT / PDF ─── */
+    @media print {
+      @page {
+        size: A4;
+        margin: 20mm 18mm;
+      }
+
+      /* Ocultar todo excepto el contenido de la nota */
+      body { background: white !important; overflow: visible !important; }
+      #app { position: static !important; overflow: visible !important; }
+      .screen { position: static !important; opacity: 1 !important; pointer-events: auto !important; display: none !important; }
+      .screen[data-screen="result"] { display: flex !important; flex-direction: column !important; padding: 0 !important; }
+      .topbar, .actions, .toast, [data-screen="record"], [data-screen="processing"] { display: none !important; }
+
+      /* Header de impresión */
+      #print-header { display: block !important; }
+
+      /* Contenido */
+      .result-head { padding: 0 0 12px !important; border-bottom: 1.5px solid #1A4F82; margin-bottom: 4px; }
+      .patient-name { font-size: 22px !important; }
+      .body-scroll {
+        overflow: visible !important; flex: none !important;
+        padding: 0 !important; height: auto !important;
+      }
+      .soap-section {
+        opacity: 1 !important; transform: none !important;
+        page-break-inside: avoid;
+        padding: 14px 0 !important;
+      }
+      .soap-letter { font-size: 22px !important; }
+      .soap-summary { font-size: 15px !important; }
+      .soap-body p { font-size: 13px !important; margin-bottom: 6px !important; }
+      .soap-body .nc { color: #aaa !important; }
+      .cta { display: none !important; }
+      details { display: none !important; }
+
+      /* Footer de impresión */
+      #print-footer { display: block !important; }
+    }
+
+    /* Elementos solo visibles en impresión */
+    #print-header, #print-footer { display: none; }
+  </style>
+</head>
+<body data-rec="off">
+<div id="app">
+
+  <!-- ════ RECORD ════ -->
+  <section class="screen is-active" data-screen="record">
+    <header class="topbar">
+      <a href="https://lucianaia.com/" target="_blank" rel="noopener" aria-label="Luciana" style="display:flex;align-items:center;">
+        <svg class="brand-mark" viewBox="0 0 120 120" aria-hidden="true">
+          <circle cx="60" cy="60" r="54" fill="none" stroke="#1A4F82" stroke-width="4"/>
+          <text x="60" y="86" text-anchor="middle" font-family="'DM Serif Display',Georgia,serif" font-size="78" fill="#1A4F82">L</text>
+          <circle cx="80" cy="42" r="6" fill="#E85D3A"/>
+        </svg>
+      </a>
+      <div class="brand-text">ESCRIBANO DENTAL</div>
+      <div style="width:38px;height:38px"></div>
+    </header>
+
+    <div class="rec-head">
+      <div class="eyebrow" id="rec-eyebrow">NUEVA CONSULTA</div>
+      <h1 class="display" id="rec-title">Dicta tu consulta,<br/>yo estructuro<br/>la nota<br/>dental.</h1>
+      <p class="lede" id="rec-lede">Presiona grabar y dicta lo que hiciste. Generaremos la nota clínica dental estructurada.</p>
+    </div>
+
+    <div class="rec-stage">
+      <div class="timer-row">
+        <span class="timer-dot"></span>
+        <span class="timer-val" id="rec-timer">00:00</span>
+        <span class="timer-tag" id="rec-tag">LISTO</span>
+      </div>
+
+      <div class="rec-btn-wrap">
+        <span class="halo"></span>
+        <span class="halo"></span>
+        <span class="halo"></span>
+        <span class="rec-glow" aria-hidden="true"></span>
+        <button class="rec-btn" id="btn-record" aria-label="Grabar consulta">
+          <span class="rec-icon rec-icon-mic">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+          </span>
+          <span class="rec-icon rec-icon-pause">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg>
+          </span>
+          <span class="rec-icon rec-icon-play">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.14v14l11-7-11-7z"/></svg>
+          </span>
+        </button>
+      </div>
+
+      <div class="wave" id="wave" aria-hidden="true"></div>
+    </div>
+
+    <div class="rec-foot" style="display:flex;flex-direction:column;align-items:center;position:relative;z-index:10;">
+      <div class="hint" id="rec-hint">TAP TO START · GRABACIÓN LOCAL</div>
+      <button class="btn-finalizar" id="btn-finalizar">
+        Finalizar consulta
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- ════ PROCESSING ════ -->
+  <section class="screen" data-screen="processing">
+    <header class="topbar">
+      <a href="https://lucianaia.com/" target="_blank" rel="noopener" style="display:flex;align-items:center;">
+        <svg class="brand-mark" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="54" fill="none" stroke="#1A4F82" stroke-width="4"/>
+          <text x="60" y="86" text-anchor="middle" font-family="'DM Serif Display',Georgia,serif" font-size="78" fill="#1A4F82">L</text>
+          <circle cx="80" cy="42" r="6" fill="#E85D3A"/>
+        </svg>
+      </a>
+      <div class="brand-text">PROCESANDO</div>
+      <div style="width:38px"></div>
+    </header>
+
+    <div class="proc-head" style="padding-top:28px;">
+      <div class="eyebrow muted" id="proc-eyebrow">PROCESANDO · 00:00</div>
+      <h1 class="display">Escribiendo<br/>tu nota.</h1>
+    </div>
+
+    <div class="proc-list">
+      <div class="proc-step" data-step="0">
+        <div class="ind">
+          <div class="ring-idle"></div>
+          <div class="ring-active"></div>
+          <svg class="check" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M7 12l3 3 7-7"/></svg>
+        </div>
+        <div class="label">Transcribiendo audio</div>
+      </div>
+      <div class="proc-step" data-step="1">
+        <div class="ind">
+          <div class="ring-idle"></div>
+          <div class="ring-active"></div>
+          <svg class="check" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M7 12l3 3 7-7"/></svg>
+        </div>
+        <div class="label">Analizando procedimiento clínico</div>
+      </div>
+      <div class="proc-step" data-step="2">
+        <div class="ind">
+          <div class="ring-idle"></div>
+          <div class="ring-active"></div>
+          <svg class="check" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M7 12l3 3 7-7"/></svg>
+        </div>
+        <div class="label">Estructurando nota dental</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ RESULT ════ -->
+  <section class="screen" data-screen="result">
+    <header class="topbar">
+      <a href="https://lucianaia.com/" target="_blank" rel="noopener" style="display:flex;align-items:center;">
+        <svg class="brand-mark" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="54" fill="none" stroke="#1A4F82" stroke-width="4"/>
+          <text x="60" y="86" text-anchor="middle" font-family="'DM Serif Display',Georgia,serif" font-size="78" fill="#1A4F82">L</text>
+          <circle cx="80" cy="42" r="6" fill="#E85D3A"/>
+        </svg>
+      </a>
+      <div class="brand-text" id="result-date-label">NOTA SOAP</div>
+      <button class="icon-btn" id="btn-edit" aria-label="Editar">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4z"/></svg>
+      </button>
+    </header>
+
+    <!-- Header solo visible al imprimir -->
+    <div id="print-header" style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:2px solid #1A4F82;margin-bottom:14px;">
+        <div>
+          <div style="font-family:'DM Serif Display',Georgia,serif;font-size:20px;color:#0F3259;letter-spacing:-0.01em;">Escribano Veterinario</div>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#8A8F99;letter-spacing:0.08em;" id="print-date"></div>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#8A8F99;letter-spacing:0.18em;margin-bottom:6px;">NOTA DE CONSULTA VETERINARIA</div>
+    </div>
+
+    <div class="result-head">
+      <h1 class="patient-name" id="res-nombre">—</h1>
+      <div class="patient-meta" id="res-meta"></div>
+    </div>
+
+    <div class="body-scroll" id="body-scroll"></div>
+
+    <!-- Footer solo visible al imprimir -->
+    <div id="print-footer" style="margin-top:20px;padding-top:10px;border-top:1px solid rgba(15,50,89,0.12);display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:#aaa;letter-spacing:0.1em;">
+        Generado con Escribano Veterinario · lucianaia.com<br/>
+        Este documento es un apoyo clínico. No sustituye el expediente oficial.
+      </div>
+      <div style="font-family:'DM Serif Display',serif;font-size:13px;color:#1A4F82;">
+        L<span style="display:inline-block;width:4px;height:4px;border-radius:50%;background:#E85D3A;vertical-align:super;margin-left:1px;"></span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" id="btn-back">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+        Nueva
+      </button>
+      <button class="btn btn-ghost" id="btn-copy">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+        <span id="btn-copy-label">Copiar</span>
+      </button>
+      <button class="btn btn-ghost" id="btn-word" style="flex:1.2;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Word
+      </button>
+      <button class="btn btn-primary" id="btn-pdf">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+        PDF
+      </button>
+    </div>
+  </section>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const WORKER_URL = "https://pediatra-scribe-api.lucandres.workers.dev";
+const TIPO = "veterinario";
+const MAX_MINUTES = 60;
+const WARN_MINUTES = 55;
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+const state = {
+  recording: false,
+  elapsed: 0,
+  timerId: null,
+  mediaRecorder: null,
+  audioChunks: [],
+  audioBlob: null,
+  audioCtx: null,
+  analyser: null,
+  vizRAF: null,
+  notaJson: null,
+  transcripcion: "",
+  editing: false,
+};
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+
+// Escapa HTML para prevenir XSS en valores que vienen del LLM/transcripción.
+const esc = s => {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
+const showScreen = name => {
+  $$('.screen').forEach(el => el.classList.toggle('is-active', el.dataset.screen === name));
+};
+
+const showToast = msg => {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('is-visible');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('is-visible'), 2200);
+};
+
+const showError = msg => showToast('⚠️ ' + msg);
+
+// ─── WAVEFORM ─────────────────────────────────────────────────────────────────
+const waveEl = $('wave');
+for (let i = 0; i < 26; i++) {
+  const b = document.createElement('span');
+  b.className = 'bar';
+  b.style.animationDelay = `${(i * 0.06).toFixed(2)}s`;
+  b.style.animationDuration = `${(0.9 + (i % 5) * 0.12).toFixed(2)}s`;
+  waveEl.appendChild(b);
+}
+
+// ─── RECORDING UI STATE ───────────────────────────────────────────────────────
+const setRecUI = on => {
+  document.body.dataset.rec = on ? 'on' : 'off';
+  const title = $('rec-title');
+  const lede  = $('rec-lede');
+  const hint  = $('rec-hint');
+  const tag   = $('rec-tag');
+  if (on) {
+    title.innerHTML = 'Escuchando<br/>cada palabra.';
+    lede.textContent = 'El dictado se transcribe en servidores externos (EE.UU.) y no se almacena en nuestros sistemas.';
+    hint.textContent = 'TOCA PARA PAUSAR';
+    tag.textContent = 'GRABANDO';
+  } else {
+    title.innerHTML = 'Dicta tu consulta,<br/>yo estructuro<br/>la nota<br/>veterinaria.';
+    lede.textContent = 'Presiona grabar y dicta la consulta. Generaremos la nota clínica veterinaria estructurada.';
+    hint.textContent = 'TAP TO START · GRABACIÓN LOCAL';
+    tag.textContent = 'LISTO';
+  }
+};
+
+// ─── TIMER ────────────────────────────────────────────────────────────────────
+const startTimer = () => {
+  state.timerId = setInterval(() => {
+    state.elapsed++;
+    $('rec-timer').textContent = fmt(state.elapsed);
+    if (state.elapsed >= WARN_MINUTES * 60) {
+      $('rec-tag').textContent = 'CERRANDO';
+    }
+    if (state.elapsed >= MAX_MINUTES * 60) {
+      showToast(`Grabación detenida al llegar a ${MAX_MINUTES} min`);
+      stopRecording();
+    }
+  }, 1000);
+};
+const stopTimer = () => { clearInterval(state.timerId); state.timerId = null; };
+
+// ─── AUDIO VISUALIZER ─────────────────────────────────────────────────────────
+const startViz = stream => {
+  try {
+    state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = state.audioCtx.createMediaStreamSource(stream);
+    state.analyser = state.audioCtx.createAnalyser();
+    state.analyser.fftSize = 64;
+    src.connect(state.analyser);
+    const bars = waveEl.querySelectorAll('.bar');
+    const data = new Uint8Array(state.analyser.frequencyBinCount);
+    const draw = () => {
+      state.vizRAF = requestAnimationFrame(draw);
+      state.analyser.getByteFrequencyData(data);
+      bars.forEach((b, i) => {
+        const v = data[Math.floor(i / bars.length * data.length)] || 0;
+        b.style.height = `${Math.max(3, Math.round(v / 255 * 36))}px`;
+      });
+    };
+    draw();
+  } catch(e) { /* AudioContext not critical */ }
+};
+
+const stopViz = () => {
+  cancelAnimationFrame(state.vizRAF);
+  if (state.audioCtx) { state.audioCtx.close().catch(()=>{}); state.audioCtx = null; }
+};
+
+// ─── MEDIA RECORDER ───────────────────────────────────────────────────────────
+const getBestMime = () =>
+  ['audio/webm;codecs=opus','audio/ogg;codecs=opus','audio/webm','audio/mp4']
+  .find(t => MediaRecorder.isTypeSupported(t)) || '';
+
+const startRecording = async () => {
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: { channelCount:1, sampleRate:16000, echoCancellation:true, noiseSuppression:true }
+    });
+  } catch(err) {
+    showError(err.name === 'NotAllowedError'
+      ? 'Permiso de micrófono denegado'
+      : 'No se pudo acceder al micrófono');
+    return;
+  }
+
+  const mime = getBestMime();
+  const opts = { audioBitsPerSecond: 16000 };
+  if (mime) opts.mimeType = mime;
+  try { state.mediaRecorder = new MediaRecorder(stream, opts); }
+  catch { state.mediaRecorder = new MediaRecorder(stream); }
+
+  state.audioChunks = [];
+  state.mediaRecorder.ondataavailable = e => { if (e.data.size > 0) state.audioChunks.push(e.data); };
+  state.mediaRecorder.onstop = onRecordingStop;
+  state.mediaRecorder.start(1000);
+  state.recording = true;
+
+  setRecUI(true);
+  startTimer();
+  startViz(stream);
+
+  // Update eyebrow with date
+  const now = new Date();
+  $('rec-eyebrow').textContent = `GRABANDO · ${now.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase()}`;
+};
+
+const stopRecording = () => {
+  if (!state.mediaRecorder) return;
+  if (state.mediaRecorder.state === 'inactive') return;
+  state.mediaRecorder.stop();
+  state.mediaRecorder.stream.getTracks().forEach(t => t.stop());
+  state.recording = false;
+  stopTimer();
+  stopViz();
+};
+
+const onRecordingStop = () => {
+  const mime = state.mediaRecorder?.mimeType || 'audio/webm';
+  state.audioBlob = new Blob(state.audioChunks, { type: mime });
+  setRecUI(false);
+
+  // Transition to processing
+  $('proc-eyebrow').textContent = `PROCESANDO · ${fmt(state.elapsed)}`;
+  showScreen('processing');
+  processAudio();
+};
+
+// ─── BTN RECORD — graba / pausa / reanuda ────────────────────────────────────
+$('btn-record').addEventListener('click', () => {
+  if (!state.recording && document.body.dataset.rec === 'off') {
+    startRecording();
+  } else if (state.recording && document.body.dataset.rec === 'on') {
+    pauseRecording();
+  } else if (document.body.dataset.rec === 'paused') {
+    resumeRecording();
+  }
+});
+
+// ─── BTN FINALIZAR ────────────────────────────────────────────────────────────
+$('btn-finalizar').addEventListener('click', () => stopRecording());
+
+const pauseRecording = () => {
+  if (!state.mediaRecorder) return;
+  state.mediaRecorder.pause();
+  stopTimer();
+  stopViz();
+  document.body.dataset.rec = 'paused';
+  $('rec-title').innerHTML = 'Pausada.';
+  $('rec-lede').textContent = 'Toca para reanudar — o finaliza para generar la nota.';
+  $('rec-hint').textContent = 'TOCA PARA REANUDAR';
+  $('rec-tag').textContent = 'PAUSADA';
+};
+
+const resumeRecording = () => {
+  if (!state.mediaRecorder) return;
+  state.mediaRecorder.resume();
+  document.body.dataset.rec = 'on';
+  $('rec-title').innerHTML = 'Escuchando<br/>cada palabra.';
+  $('rec-lede').textContent = 'El dictado se transcribe en servidores externos (EE.UU.) y no se almacena en nuestros sistemas.';
+  $('rec-hint').textContent = 'TOCA PARA PAUSAR';
+  $('rec-tag').textContent = 'GRABANDO';
+  // Reiniciar timer y visualizador (usa mismo state.timerId para que stopTimer lo limpie)
+  startTimer();
+  if (state.mediaRecorder?.stream) startViz(state.mediaRecorder.stream);
+};
+
+// ─── PROCESSING — Real API call ───────────────────────────────────────────────
+const runProcessingUI = (realDone) => {
+  const steps = $$('.proc-step');
+  steps.forEach(s => s.classList.remove('is-active','is-done'));
+  steps[0].classList.add('is-active');
+
+  // Animate steps visually while waiting for real API
+  let i = 0;
+  const tick = () => {
+    steps[i].classList.remove('is-active');
+    steps[i].classList.add('is-done');
+    i++;
+    if (i < steps.length) {
+      steps[i].classList.add('is-active');
+    }
+  };
+  // Step 1 after ~3s, step 2 after the API responds
+  const t1 = setTimeout(() => tick(), 3000);
+  const t2 = setTimeout(() => { if (i < steps.length) tick(); }, 8000);
+
+  // When API finishes, mark all done and show result
+  realDone.then(nota => {
+    clearTimeout(t1); clearTimeout(t2);
+    steps.forEach(s => { s.classList.remove('is-active'); s.classList.add('is-done'); });
+    state.notaJson = nota;
+    setTimeout(() => {
+      renderResult(nota);
+      showScreen('result');
+    }, 500);
+  }).catch(err => {
+    clearTimeout(t1); clearTimeout(t2);
+    showScreen('record');
+    showError(err.message || 'Error al procesar. Intenta de nuevo.');
+  });
+};
+
+const processAudio = async () => {
+  if (!state.audioBlob) { showError('No hay audio grabado.'); return; }
+
+  const realDoneResolver = {};
+  const realDone = new Promise((res, rej) => {
+    realDoneResolver.resolve = res;
+    realDoneResolver.reject = rej;
+  });
+
+  runProcessingUI(realDone);
+
+  const form = new FormData();
+  form.append('audio', state.audioBlob, 'consulta.webm');
+  form.append('tipo', TIPO);
+
+  let data;
+  try {
+    const res = await fetch(WORKER_URL, { method:'POST', body:form });
+    data = await res.json();
+  } catch {
+    realDoneResolver.reject(new Error('No se pudo conectar al servidor.'));
+    return;
+  }
+
+  if (!data.ok) {
+    realDoneResolver.reject(new Error(data.error || 'Error en el servidor.'));
+    return;
+  }
+
+  state.transcripcion = data.transcripcion || '';
+
+  // Parse SOAP JSON
+  let nota = tryJSON(data.soap);
+  if (!nota) {
+    const s = (data.soap||'').replace(/^[\s\S]*?```(?:json)?\s*/i,'').replace(/\s*```[\s\S]*$/i,'').trim();
+    nota = tryJSON(s);
+  }
+  if (!nota) {
+    const f = (data.soap||'').indexOf('{'), l = (data.soap||'').lastIndexOf('}');
+    if (f !== -1 && l > f) nota = tryJSON((data.soap||'').slice(f, l+1));
+  }
+  if (!nota) {
+    realDoneResolver.reject(new Error('La nota generada no tiene formato válido.'));
+    return;
+  }
+
+  realDoneResolver.resolve(nota);
+};
+
+const tryJSON = s => { try { return s ? JSON.parse(s.trim()) : null; } catch { return null; } };
+
+// ─── RENDER RESULT — DENTAL ──────────────────────────────────────────────────
+const nc = v => (v !== null && v !== undefined && v !== '' && v !== 'No consignado') ? v : null;
+
+const campo = (label, val) => val
+  ? `<p><strong style="font-size:10px;letter-spacing:.08em;color:var(--ink-soft);font-family:var(--mono);text-transform:uppercase;">${esc(label)}</strong><br/>${esc(val)}</p>`
+  : `<p class="nc">${esc(label)}: No consignado</p>`;
+
+// El parámetro `contenido` ya viene escapado (lo construyó campo() o el bloque receta)
+const seccion = (letra, titulo, contenido) => `
+  <section class="soap-section">
+    <div class="soap-marker">
+      <div class="soap-letter" style="font-size:${letra.length>1?'16px':'28px'}">${esc(letra)}</div>
+      <div>
+        <div class="soap-label">${esc(titulo)}</div>
+        <div class="soap-summary">${esc(titulo)}</div>
+      </div>
+    </div>
+    <div class="soap-body">${contenido}</div>
+  </section>`;
+
+const renderResult = nota => {
+  const p = nota.paciente || {};
+  $('res-nombre').textContent = nc(p.nombre) || 'Paciente';
+  const meta = [nc(p.especie), nc(p.raza), nc(p.edad), nc(p.sexo), nc(p.peso),
+                nc(nota.dueno_tutor) ? `Tutor: ${nc(nota.dueno_tutor)}` : null].filter(Boolean);
+  $('res-meta').innerHTML = meta.map((m,i) => i < meta.length-1
+    ? `<span>${esc(m)}</span><span class="sep">·</span>` : `<span>${esc(m)}</span>`).join('');
+  $('result-date-label').textContent = `NOTA VETERINARIA · ${new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase()}`;
+
+  const scroll = $('body-scroll');
+  const sv = nota.signos_vitales || {};
+
+  const secciones = [
+    seccion('🐾', 'PACIENTE', [
+      campo('Nombre', nc(p.nombre)),
+      campo('Especie', nc(p.especie)),
+      campo('Raza', nc(p.raza)),
+      campo('Edad', nc(p.edad)),
+      campo('Sexo', nc(p.sexo)),
+      campo('Peso', nc(p.peso)),
+      campo('Color / seña particular', nc(p.color_o_sena_particular)),
+      campo('Dueño / tutor', nc(nota.dueno_tutor)),
+    ].join('')),
+    seccion('S', 'SUBJETIVO', [
+      campo('Motivo de consulta', nc(nota.motivo_consulta)),
+      campo('Anamnesis', nc(nota.anamnesis)),
+    ].join('')),
+    seccion('O', 'OBJETIVO', [
+      campo('Exploración física', nc(nota.exploracion_fisica)),
+      campo('Frecuencia cardiaca', nc(sv.frecuencia_cardiaca)),
+      campo('Frecuencia respiratoria', nc(sv.frecuencia_respiratoria)),
+      campo('Temperatura', nc(sv.temperatura)),
+      campo('TLLC', nc(sv.tllc)),
+      campo('Mucosas', nc(sv.mucosas)),
+    ].join('')),
+    seccion('A', 'ANÁLISIS', [
+      campo('Diagnóstico presuntivo', nc(nota.diagnostico_presuntivo)),
+      campo('Estudios solicitados', nc(nota.estudios_solicitados)),
+    ].join('')),
+    seccion('P', 'PLAN', [
+      campo('Plan terapéutico', nc(nota.plan_terapeutico)),
+      campo('Indicaciones al dueño', nc(nota.indicaciones_dueno)),
+      campo('Próxima cita', nc(nota.proxima_cita)),
+    ].join('')),
+  ];
+
+  // Receta — validar array
+  if (Array.isArray(nota.receta) && nota.receta.length > 0) {
+    const items = nota.receta.map(r => {
+      if (!r || typeof r !== 'object') return '';
+      const partes = [r.medicamento, r.concentracion, r.via, r.dosis, r.frecuencia, r.duracion, r.indicacion_especial].filter(Boolean).join(' · ');
+      return partes ? `<p>${esc(partes)}</p>` : '';
+    }).join('');
+    if (items) secciones.push(seccion('💊', 'RECETA', items));
+  }
+
+  // Vacunas aplicadas
+  if (Array.isArray(nota.vacunas_aplicadas) && nota.vacunas_aplicadas.length > 0) {
+    const items = nota.vacunas_aplicadas.map(v => {
+      if (!v || typeof v !== 'object') return '';
+      const partes = [v.nombre, v.marca, v.lote ? `Lote ${v.lote}` : null, v.fecha_proxima ? `Próxima: ${v.fecha_proxima}` : null].filter(Boolean).join(' · ');
+      return partes ? `<p>${esc(partes)}</p>` : '';
+    }).join('');
+    if (items) secciones.push(seccion('💉', 'VACUNAS APLICADAS', items));
+  }
+
+  // Desparasitación
+  const desp = nota.desparasitacion || {};
+  if (desp.producto || desp.via || desp.fecha_proxima) {
+    secciones.push(seccion('🪱', 'DESPARASITACIÓN', [
+      campo('Producto', nc(desp.producto)),
+      campo('Vía', nc(desp.via)),
+      campo('Próxima', nc(desp.fecha_proxima)),
+    ].join('')));
+  }
+
+  // Recordatorios automáticos
+  if (Array.isArray(nota.recordatorios_automaticos) && nota.recordatorios_automaticos.length > 0) {
+    const items = nota.recordatorios_automaticos.map(r => {
+      if (!r || typeof r !== 'object') return '';
+      const partes = [r.tipo, r.fecha_objetivo, r.detalle].filter(Boolean).join(' · ');
+      return partes ? `<p>${esc(partes)}</p>` : '';
+    }).join('');
+    if (items) secciones.push(seccion('🔔', 'RECORDATORIOS', items));
+  }
+
+  scroll.innerHTML = secciones.join('');
+
+  // Transcripción colapsable
+  if (state.transcripcion) {
+    scroll.innerHTML += `
+      <details style="padding:18px 0;border-top:1px solid var(--line)">
+        <summary style="cursor:pointer;font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--muted);list-style:none;">
+          VER TRANSCRIPCIÓN COMPLETA
+        </summary>
+        <p style="font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);line-height:1.7;margin-top:12px;white-space:pre-wrap;">${esc(state.transcripcion)}</p>
+      </details>`;
+  }
+
+  // CTA Luciana
+  scroll.innerHTML += `
+    <a class="cta" href="https://lucianaia.com" target="_blank" rel="noopener"
+       style="display:block;margin:24px 0 8px;padding:20px;border-radius:16px;
+              background:var(--navy-deep);text-decoration:none;
+              opacity:0;transform:translateY(20px);
+              transition:opacity .55s cubic-bezier(.2,.7,.2,1),transform .55s cubic-bezier(.2,.7,.2,1);">
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.18em;color:rgba(247,244,238,0.45);margin-bottom:8px;">
+        HERRAMIENTA GRATUITA · LUCIANA IA
+      </div>
+      <div style="font-family:'DM Serif Display',Georgia,serif;font-size:19px;color:var(--cream);line-height:1.2;margin-bottom:10px;letter-spacing:-0.01em;">
+        ¿Tu agenda también<br/>podría ser más fácil?
+      </div>
+      <div style="font-family:var(--sans);font-size:13px;color:rgba(247,244,238,0.6);line-height:1.5;margin-bottom:14px;">
+        Luciana IA automatiza citas, recordatorios y recepción de tu consultorio.
+      </div>
+      <span style="display:inline-flex;align-items:center;gap:6px;
+                   background:var(--coral);color:white;
+                   font-family:var(--sans);font-size:13px;font-weight:600;
+                   padding:9px 16px;border-radius:10px;">
+        Conocer Luciana IA
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </span>
+    </a>`;
+
+  scroll.scrollTop = 0;
+
+  // Reveal on scroll
+  const sections = Array.from(scroll.querySelectorAll('.soap-section, .cta, details, [style*="opacity:0"]'));
+  if (sections[0]) sections[0].classList.add('is-visible');
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('is-visible');
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+        io.unobserve(e.target);
+      }
+    });
+  }, { root: scroll, threshold: 0.12 });
+  sections.slice(1).forEach(el => io.observe(el));
+};
+
+// ─── COPY ─────────────────────────────────────────────────────────────────────
+$('btn-copy').addEventListener('click', async () => {
+  if (!state.notaJson) return;
+  const n = state.notaJson;
+  const p = n.paciente || {};
+  const sv = n.signos_vitales || {};
+  const desp = n.desparasitacion || {};
+  const ncv = v => (v && v !== null) ? v : 'No consignado';
+  const line = '─'.repeat(40);
+
+  const recetaLineas = (Array.isArray(n.receta) && n.receta.length > 0)
+    ? n.receta.map(r => [r.medicamento, r.concentracion, r.via, r.dosis, r.frecuencia, r.duracion, r.indicacion_especial].filter(Boolean).join(' · '))
+    : ['Sin receta'];
+
+  const vacunasLineas = (Array.isArray(n.vacunas_aplicadas) && n.vacunas_aplicadas.length > 0)
+    ? n.vacunas_aplicadas.map(v => [v.nombre, v.marca, v.lote ? `Lote ${v.lote}` : null, v.fecha_proxima ? `Próxima: ${v.fecha_proxima}` : null].filter(Boolean).join(' · '))
+    : ['Sin vacunas aplicadas'];
+
+  const recordatoriosLineas = (Array.isArray(n.recordatorios_automaticos) && n.recordatorios_automaticos.length > 0)
+    ? n.recordatorios_automaticos.map(r => [r.tipo, r.fecha_objetivo, r.detalle].filter(Boolean).join(' · '))
+    : ['Sin recordatorios'];
+
+  const text = [
+    'NOTA DE CONSULTA VETERINARIA',
+    `Fecha: ${new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'})}`,
+    '', line, '🐾 PACIENTE', line,
+    `Nombre: ${ncv(p.nombre)}`,
+    `Especie: ${ncv(p.especie)}  |  Raza: ${ncv(p.raza)}`,
+    `Edad: ${ncv(p.edad)}  |  Sexo: ${ncv(p.sexo)}  |  Peso: ${ncv(p.peso)}`,
+    p.color_o_sena_particular ? `Color/seña: ${p.color_o_sena_particular}` : null,
+    `Dueño/tutor: ${ncv(n.dueno_tutor)}`,
+    '', line, 'S — SUBJETIVO', line,
+    `Motivo de consulta: ${ncv(n.motivo_consulta)}`,
+    `Anamnesis: ${ncv(n.anamnesis)}`,
+    '', line, 'O — OBJETIVO', line,
+    `Exploración física: ${ncv(n.exploracion_fisica)}`,
+    `FC: ${ncv(sv.frecuencia_cardiaca)}  |  FR: ${ncv(sv.frecuencia_respiratoria)}  |  T°: ${ncv(sv.temperatura)}`,
+    `TLLC: ${ncv(sv.tllc)}  |  Mucosas: ${ncv(sv.mucosas)}`,
+    '', line, 'A — ANÁLISIS', line,
+    `Diagnóstico presuntivo: ${ncv(n.diagnostico_presuntivo)}`,
+    `Estudios solicitados: ${ncv(n.estudios_solicitados)}`,
+    '', line, 'P — PLAN', line,
+    `Plan terapéutico: ${ncv(n.plan_terapeutico)}`,
+    `Indicaciones al dueño: ${ncv(n.indicaciones_dueno)}`,
+    `Próxima cita: ${ncv(n.proxima_cita)}`,
+    '', line, '💊 RECETA', line,
+    ...recetaLineas,
+    '', line, '💉 VACUNAS APLICADAS', line,
+    ...vacunasLineas,
+    '', line, '🪱 DESPARASITACIÓN', line,
+    `Producto: ${ncv(desp.producto)}  |  Vía: ${ncv(desp.via)}  |  Próxima: ${ncv(desp.fecha_proxima)}`,
+    '', line, '🔔 RECORDATORIOS', line,
+    ...recordatoriosLineas,
+    '', line,
+    'Generado con Escribano Veterinario · lucianaia.com',
+  ].filter(l => l !== null && l !== undefined).join('\n');
+
+  try { await navigator.clipboard.writeText(text); }
+  catch { const ta = Object.assign(document.createElement('textarea'),{value:text,style:'position:fixed;opacity:0'}); document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+
+  const btn = $('btn-copy');
+  btn.classList.add('copied');
+  $('btn-copy-label').textContent = '¡Copiado!';
+  setTimeout(() => { btn.classList.remove('copied'); $('btn-copy-label').textContent = 'Copiar'; }, 2500);
+});
+
+// ─── WORD (.doc) ─────────────────────────────────────────────────────────────
+$('btn-word').addEventListener('click', () => {
+  if (!state.notaJson) return;
+  const n = state.notaJson;
+  const p = n.paciente || {};
+  const sv = n.signos_vitales || {};
+  const desp = n.desparasitacion || {};
+  const ncv = v => (v && v !== null) ? v : '<span style="color:#aaa;font-style:italic;">No consignado</span>';
+  const fecha = new Date().toLocaleDateString('es-MX', { day:'2-digit', month:'long', year:'numeric' });
+
+  const seccionWord = (letra, titulo, campos) => `
+    <h2 style="font-family:Georgia,serif;font-size:14pt;color:#E85D3A;margin:18pt 0 4pt;border-bottom:1pt solid #E0D9CC;padding-bottom:4pt;">
+      ${letra} &nbsp;<span style="font-size:9pt;color:#6B7280;font-family:Courier New,monospace;letter-spacing:0.1em;">${titulo}</span>
+    </h2>
+    ${campos.map(([label, val]) => `
+      <p style="margin:6pt 0 3pt;">
+        <span style="font-family:Courier New,monospace;font-size:8pt;color:#6B7280;text-transform:uppercase;letter-spacing:0.08em;">${label}</span><br/>
+        <span style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#1B1F26;">${ncv(val)}</span>
+      </p>`).join('')}`;
+
+  const recetaHtml = (Array.isArray(n.receta) && n.receta.length > 0)
+    ? n.receta.map(r => {
+        if (!r || typeof r !== 'object') return '';
+        const partes = [r.medicamento, r.concentracion, r.via, r.dosis, r.frecuencia, r.duracion, r.indicacion_especial].filter(Boolean).join(' · ');
+        return partes ? `<p style="margin:4pt 0;font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#1B1F26;">${partes}</p>` : '';
+      }).join('')
+    : `<p style="color:#aaa;font-style:italic;">Sin receta</p>`;
+
+  const vacunasHtml = (Array.isArray(n.vacunas_aplicadas) && n.vacunas_aplicadas.length > 0)
+    ? n.vacunas_aplicadas.map(v => {
+        if (!v || typeof v !== 'object') return '';
+        const partes = [v.nombre, v.marca, v.lote ? `Lote ${v.lote}` : null, v.fecha_proxima ? `Próxima: ${v.fecha_proxima}` : null].filter(Boolean).join(' · ');
+        return partes ? `<p style="margin:4pt 0;font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#1B1F26;">${partes}</p>` : '';
+      }).join('')
+    : `<p style="color:#aaa;font-style:italic;">Sin vacunas aplicadas</p>`;
+
+  const recordatoriosHtml = (Array.isArray(n.recordatorios_automaticos) && n.recordatorios_automaticos.length > 0)
+    ? n.recordatorios_automaticos.map(r => {
+        if (!r || typeof r !== 'object') return '';
+        const partes = [r.tipo, r.fecha_objetivo, r.detalle].filter(Boolean).join(' · ');
+        return partes ? `<p style="margin:4pt 0;font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#1B1F26;">${partes}</p>` : '';
+      }).join('')
+    : '';
+
+  const html = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office"
+          xmlns:w="urn:schemas-microsoft-com:office:word"
+          xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <meta charset="utf-8"/>
+      <!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>90</w:Zoom></w:WordDocument></xml><![endif]-->
+      <style>
+        @page { size: A4; margin: 2.5cm 2.2cm; }
+        body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #1B1F26; }
+        h1 { font-family: Georgia, serif; font-size: 22pt; color: #0F3259; margin: 0 0 4pt; }
+        h2 { page-break-inside: avoid; }
+        p  { margin: 4pt 0; line-height: 1.5; }
+      </style>
+    </head>
+    <body>
+      <!-- MEMBRETE -->
+      <table width="100%" style="border-bottom:2pt solid #1A4F82;padding-bottom:8pt;margin-bottom:12pt;">
+        <tr>
+          <td><h1 style="font-family:Georgia,serif;font-size:20pt;color:#0F3259;margin:0;">Escribano Veterinario</h1></td>
+          <td align="right" style="font-family:Courier New,monospace;font-size:8pt;color:#8A8F99;vertical-align:bottom;">${fecha}</td>
+        </tr>
+      </table>
+
+      <p style="font-family:Courier New,monospace;font-size:8pt;color:#8A8F99;letter-spacing:0.18em;margin-bottom:10pt;">NOTA DE CONSULTA VETERINARIA</p>
+
+      <!-- PACIENTE -->
+      <h1 style="font-family:Georgia,serif;font-size:20pt;color:#0F3259;">${p.nombre || 'Paciente'}</h1>
+      <p style="font-family:Courier New,monospace;font-size:9pt;color:#6B7280;margin-bottom:14pt;">
+        ${[p.especie, p.raza, p.edad, p.sexo, p.peso].filter(Boolean).join(' &nbsp;·&nbsp; ')}
+        ${n.dueno_tutor ? ' &nbsp;·&nbsp; Tutor: ' + n.dueno_tutor : ''}
+      </p>
+
+      ${seccionWord('S', 'SUBJETIVO', [
+        ['Motivo de consulta', n.motivo_consulta],
+        ['Anamnesis', n.anamnesis],
+      ])}
+      ${seccionWord('O', 'OBJETIVO', [
+        ['Exploración física', n.exploracion_fisica],
+        ['Frecuencia cardiaca', sv.frecuencia_cardiaca],
+        ['Frecuencia respiratoria', sv.frecuencia_respiratoria],
+        ['Temperatura', sv.temperatura],
+        ['TLLC', sv.tllc],
+        ['Mucosas', sv.mucosas],
+      ])}
+      ${seccionWord('A', 'ANÁLISIS', [
+        ['Diagnóstico presuntivo', n.diagnostico_presuntivo],
+        ['Estudios solicitados', n.estudios_solicitados],
+      ])}
+      ${seccionWord('P', 'PLAN', [
+        ['Plan terapéutico', n.plan_terapeutico],
+        ['Indicaciones al dueño', n.indicaciones_dueno],
+        ['Próxima cita', n.proxima_cita],
+      ])}
+
+      <h2 style="font-family:Georgia,serif;font-size:14pt;color:#E85D3A;margin:18pt 0 4pt;border-bottom:1pt solid #E0D9CC;padding-bottom:4pt;">
+        💊 &nbsp;<span style="font-size:9pt;color:#6B7280;font-family:Courier New,monospace;letter-spacing:0.1em;">RECETA</span>
+      </h2>
+      ${recetaHtml}
+
+      <h2 style="font-family:Georgia,serif;font-size:14pt;color:#E85D3A;margin:18pt 0 4pt;border-bottom:1pt solid #E0D9CC;padding-bottom:4pt;">
+        💉 &nbsp;<span style="font-size:9pt;color:#6B7280;font-family:Courier New,monospace;letter-spacing:0.1em;">VACUNAS APLICADAS</span>
+      </h2>
+      ${vacunasHtml}
+
+      ${seccionWord('🪱', 'DESPARASITACIÓN', [
+        ['Producto', desp.producto],
+        ['Vía', desp.via],
+        ['Próxima', desp.fecha_proxima],
+      ])}
+
+      ${recordatoriosHtml ? `
+      <h2 style="font-family:Georgia,serif;font-size:14pt;color:#E85D3A;margin:18pt 0 4pt;border-bottom:1pt solid #E0D9CC;padding-bottom:4pt;">
+        🔔 &nbsp;<span style="font-size:9pt;color:#6B7280;font-family:Courier New,monospace;letter-spacing:0.1em;">RECORDATORIOS</span>
+      </h2>
+      ${recordatoriosHtml}` : ''}
+
+      <!-- FOOTER -->
+      <table width="100%" style="border-top:1pt solid #E0D9CC;margin-top:24pt;padding-top:8pt;">
+        <tr>
+          <td style="font-family:Courier New,monospace;font-size:7.5pt;color:#aaa;">
+            Generado con Escribano Veterinario · lucianaia.com<br/>
+            Documento de apoyo clínico. No sustituye el expediente clínico oficial.
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>`;
+
+  const blob = new Blob(['﻿', html], { type: 'application/msword' });
+  const url = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement('a'), {
+    href: url,
+    download: `nota-veterinaria-${new Date().toISOString().slice(0,10)}.doc`
+  });
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast('Descargando Word…');
+});
+
+$('btn-pdf').addEventListener('click', () => {
+  if (!state.notaJson) return;
+  // Actualizar fecha en el header de impresión
+  $('print-date').textContent = new Date().toLocaleDateString('es-MX', {
+    day: '2-digit', month: 'long', year: 'numeric'
+  }).toUpperCase();
+  // Hacer todas las secciones visibles antes de imprimir
+  document.querySelectorAll('.soap-section, .cta').forEach(el => {
+    el.style.opacity = '1';
+    el.style.transform = 'translateY(0)';
+  });
+  setTimeout(() => window.print(), 100);
+});
+
+// ─── EDIT MODE ────────────────────────────────────────────────────────────────
+$('btn-edit').addEventListener('click', () => {
+  state.editing = !state.editing;
+  document.body.classList.toggle('is-editing', state.editing);
+  $$('#body-scroll p').forEach(p => p.contentEditable = state.editing ? 'true' : 'false');
+  showToast(state.editing ? 'Modo edición activo' : 'Cambios guardados');
+});
+
+// ─── NUEVA CONSULTA ───────────────────────────────────────────────────────────
+$('btn-back').addEventListener('click', () => {
+  state.elapsed = 0;
+  state.audioBlob = null;
+  state.notaJson = null;
+  state.transcripcion = '';
+  state.editing = false;
+  document.body.classList.remove('is-editing');
+  $('rec-timer').textContent = '00:00';
+  $('rec-eyebrow').textContent = 'NUEVA CONSULTA';
+  setRecUI(false);
+  showScreen('record');
+});
+
+// ─── PWA ──────────────────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js').catch(()=>{});
+</script>
+</body>
+</html>

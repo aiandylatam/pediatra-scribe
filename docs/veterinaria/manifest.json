@@ -1,0 +1,26 @@
+{
+  "name": "Escribano Veterinario",
+  "short_name": "Vet",
+  "description": "Dicta tu consulta veterinaria y recibe la nota clínica estructurada al instante.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#F7F4EE",
+  "background_color": "#F7F4EE",
+  "lang": "es-MX",
+  "icons": [
+    {
+      "src": "../icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["medical", "productivity"]
+}
