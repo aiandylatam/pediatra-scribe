@@ -143,20 +143,25 @@ const PROMPTS = { medico: PROMPT_MEDICO, nutricion: PROMPT_NUTRICION, dental: PR
 
 // ─── CORS ────────────────────────────────────────────────────────────────────
 
-function corsHeaders(env, request) {
+function isOriginAllowed(env, request) {
   const origin = request.headers.get("Origin") || "";
   const allowed = env.ALLOWED_ORIGIN || "*";
+  if (allowed === "*") return true;
   const allowedList = allowed.split(",").map(s => s.trim());
-
   const isDev = env.ENVIRONMENT === "development";
-  const isAllowed =
-    allowed === "*" ||
-    allowedList.includes(origin) ||
-    allowedList.some(o => origin.startsWith(o)) ||
-    (isDev && origin.startsWith("http://localhost"));
+  // Comparación EXACTA — sin startsWith para evitar bypass
+  // (ej: https://escribano.lucianaia.com.attacker.com)
+  if (allowedList.includes(origin)) return true;
+  if (isDev && /^http:\/\/localhost(:\d+)?$/.test(origin)) return true;
+  return false;
+}
 
+function corsHeaders(env, request) {
+  const origin = request.headers.get("Origin") || "";
+  const isAllowed = isOriginAllowed(env, request);
   return {
-    "Access-Control-Allow-Origin": isAllowed ? origin || "*" : "null",
+    "Access-Control-Allow-Origin": isAllowed ? origin : "null",
+    "Vary": "Origin",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Max-Age": "86400",
@@ -263,6 +268,15 @@ export default {
       return handleOptions(env, request);
     }
 
+    // Bloquear orígenes no permitidos en el handler (CORS sólo protege navegadores;
+    // un cliente directo como curl pasa CORS pero debe ser rechazado aquí).
+    if (!isOriginAllowed(env, request)) {
+      return new Response(JSON.stringify({ error: "Origen no permitido." }), {
+        status: 403,
+        headers: { "Content-Type": "application/json", ...corsHeaders(env, request) },
+      });
+    }
+
     // Solo POST
     if (request.method !== "POST") {
       return new Response(JSON.stringify({ error: "Método no permitido" }), {
@@ -315,8 +329,16 @@ export default {
       );
     }
 
-    // ── Pipeline: Whisper → Llama → JSON response ────────────────────────────
+    // ── Validar tipo contra whitelist ────────────────────────────────────────
     const tipo = formData.get("tipo") || "medico";
+    if (!Object.prototype.hasOwnProperty.call(PROMPTS, tipo)) {
+      return new Response(
+        JSON.stringify({ error: `Tipo no soportado: ${tipo}. Válidos: ${Object.keys(PROMPTS).join(", ")}` }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders(env, request) } }
+      );
+    }
+
+    // ── Pipeline: Whisper → Llama → JSON response ────────────────────────────
     try {
       const transcripcion = await transcribeAudio(audioFile, env.GROQ_API_KEY);
       const soapJson = await generateSoap(transcripcion, env.GROQ_API_KEY, tipo);

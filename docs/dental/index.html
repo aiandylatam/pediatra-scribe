@@ -673,6 +673,17 @@ const $ = id => document.getElementById(id);
 const $$ = s => Array.from(document.querySelectorAll(s));
 const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
 
+// Escapa HTML para prevenir XSS en valores que vienen del LLM/transcripción.
+const esc = s => {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
 const showScreen = name => {
   $$('.screen').forEach(el => el.classList.toggle('is-active', el.dataset.screen === name));
 };
@@ -837,7 +848,7 @@ $('btn-finalizar').addEventListener('click', () => stopRecording());
 const pauseRecording = () => {
   if (!state.mediaRecorder) return;
   state.mediaRecorder.pause();
-  clearInterval(state.timerInterval);
+  stopTimer();
   stopViz();
   document.body.dataset.rec = 'paused';
   $('rec-title').innerHTML = 'Pausada.';
@@ -854,13 +865,8 @@ const resumeRecording = () => {
   $('rec-lede').textContent = 'El dictado se procesa al terminar y se descarta de inmediato. Nunca se almacena.';
   $('rec-hint').textContent = 'TOCA PARA PAUSAR';
   $('rec-tag').textContent = 'GRABANDO';
-  // Reiniciar timer y visualizador
-  state.timerInterval = setInterval(() => {
-    state.elapsed++;
-    $('rec-timer').textContent = fmt(state.elapsed);
-    if (state.elapsed >= WARN_MINUTES * 60) $('rec-tag').textContent = 'CERRANDO';
-    if (state.elapsed >= MAX_MINUTES * 60) { showToast(`Grabación detenida al llegar a ${MAX_MINUTES} min`); stopRecording(); }
-  }, 1000);
+  // Reiniciar timer y visualizador (usa mismo state.timerId para que stopTimer lo limpie)
+  startTimer();
   if (state.mediaRecorder?.stream) startViz(state.mediaRecorder.stream);
 };
 
@@ -955,16 +961,17 @@ const tryJSON = s => { try { return s ? JSON.parse(s.trim()) : null; } catch { r
 const nc = v => (v !== null && v !== undefined && v !== '' && v !== 'No consignado') ? v : null;
 
 const campo = (label, val) => val
-  ? `<p><strong style="font-size:10px;letter-spacing:.08em;color:var(--ink-soft);font-family:var(--mono);text-transform:uppercase;">${label}</strong><br/>${val}</p>`
-  : `<p class="nc">${label}: No consignado</p>`;
+  ? `<p><strong style="font-size:10px;letter-spacing:.08em;color:var(--ink-soft);font-family:var(--mono);text-transform:uppercase;">${esc(label)}</strong><br/>${esc(val)}</p>`
+  : `<p class="nc">${esc(label)}: No consignado</p>`;
 
+// El parámetro `contenido` ya viene escapado (lo construyó campo() o el bloque receta)
 const seccion = (letra, titulo, contenido) => `
   <section class="soap-section">
     <div class="soap-marker">
-      <div class="soap-letter" style="font-size:${letra.length>1?'16px':'28px'}">${letra}</div>
+      <div class="soap-letter" style="font-size:${letra.length>1?'16px':'28px'}">${esc(letra)}</div>
       <div>
-        <div class="soap-label">${titulo}</div>
-        <div class="soap-summary">${contenido.split('\n')[0].slice(0,80) || titulo}</div>
+        <div class="soap-label">${esc(titulo)}</div>
+        <div class="soap-summary">${esc(titulo)}</div>
       </div>
     </div>
     <div class="soap-body">${contenido}</div>
@@ -975,7 +982,7 @@ const renderResult = nota => {
   const meta = [nc(nota.piezas_tratadas) ? `Piezas: ${nc(nota.piezas_tratadas)}` : null,
                 nc(nota.diagnostico)].filter(Boolean);
   $('res-meta').innerHTML = meta.map((m,i) => i < meta.length-1
-    ? `<span>${m}</span><span class="sep">·</span>` : `<span>${m}</span>`).join('');
+    ? `<span>${esc(m)}</span><span class="sep">·</span>` : `<span>${esc(m)}</span>`).join('');
   $('result-date-label').textContent = `NOTA DENTAL · ${new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase()}`;
 
   const scroll = $('body-scroll');
@@ -1003,14 +1010,14 @@ const renderResult = nota => {
     ].join('')),
   ];
 
-  // Receta
-  let recetaHtml = '';
-  if (nota.receta && nota.receta.length > 0) {
+  // Receta — validar que sea array (response_format JSON no garantiza la estructura)
+  if (Array.isArray(nota.receta) && nota.receta.length > 0) {
     const items = nota.receta.map(r => {
+      if (!r || typeof r !== 'object') return '';
       const partes = [r.medicamento, r.dosis, r.frecuencia, r.duracion, r.indicacion_especial].filter(Boolean).join(' · ');
-      return `<p>${partes}</p>`;
+      return partes ? `<p>${esc(partes)}</p>` : '';
     }).join('');
-    secciones.push(seccion('💊', 'RECETA', items));
+    if (items) secciones.push(seccion('💊', 'RECETA', items));
   }
 
   scroll.innerHTML = secciones.join('');
@@ -1022,7 +1029,7 @@ const renderResult = nota => {
         <summary style="cursor:pointer;font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--muted);list-style:none;">
           VER TRANSCRIPCIÓN COMPLETA
         </summary>
-        <p style="font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);line-height:1.7;margin-top:12px;white-space:pre-wrap;">${state.transcripcion}</p>
+        <p style="font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);line-height:1.7;margin-top:12px;white-space:pre-wrap;">${esc(state.transcripcion)}</p>
       </details>`;
   }
 

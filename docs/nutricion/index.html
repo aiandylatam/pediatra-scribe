@@ -674,6 +674,17 @@ const $ = id => document.getElementById(id);
 const $$ = s => Array.from(document.querySelectorAll(s));
 const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
 
+// Escapa HTML para prevenir XSS en valores que vienen del LLM/transcripción.
+const esc = s => {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
 const showScreen = name => {
   $$('.screen').forEach(el => el.classList.toggle('is-active', el.dataset.screen === name));
 };
@@ -838,7 +849,7 @@ $('btn-finalizar').addEventListener('click', () => stopRecording());
 const pauseRecording = () => {
   if (!state.mediaRecorder) return;
   state.mediaRecorder.pause();
-  clearInterval(state.timerInterval);
+  stopTimer();
   stopViz();
   document.body.dataset.rec = 'paused';
   $('rec-title').innerHTML = 'Pausada.';
@@ -856,13 +867,8 @@ const resumeRecording = () => {
   $('rec-lede').textContent = 'El audio se procesa al terminar y se descarta de inmediato. Nunca se almacena.';
   $('rec-hint').textContent = 'TOCA PARA PAUSAR';
   $('rec-tag').textContent = 'GRABANDO';
-  // Reiniciar timer y visualizador
-  state.timerInterval = setInterval(() => {
-    state.elapsed++;
-    $('rec-timer').textContent = fmt(state.elapsed);
-    if (state.elapsed >= WARN_MINUTES * 60) $('rec-tag').textContent = 'CERRANDO';
-    if (state.elapsed >= MAX_MINUTES * 60) { showToast(`Grabación detenida al llegar a ${MAX_MINUTES} min`); stopRecording(); }
-  }, 1000);
+  // Reiniciar timer y visualizador (usa mismo state.timerId para que stopTimer lo limpie)
+  startTimer();
   if (state.mediaRecorder?.stream) startViz(state.mediaRecorder.stream);
 };
 
@@ -982,7 +988,7 @@ const renderResult = nota => {
   // Header
   $('res-nombre').textContent = nc(p.nombre) || 'Paciente';
   const metaParts = [nc(p.edad), nc(p.sexo), nc(p.ocupacion), nc(nota.tipo_consulta)].filter(Boolean);
-  $('res-meta').innerHTML = metaParts.map((m,i) => i < metaParts.length-1 ? `<span>${m}</span><span class="sep">·</span>` : `<span>${m}</span>`).join('');
+  $('res-meta').innerHTML = metaParts.map((m,i) => i < metaParts.length-1 ? `<span>${esc(m)}</span><span class="sep">·</span>` : `<span>${esc(m)}</span>`).join('');
 
   const dateStr = nc(nota.fecha_aproximada) || new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
   $('result-date-label').textContent = `EVAL. NUTRICIONAL · ${dateStr}`;
@@ -996,16 +1002,16 @@ const renderResult = nota => {
     const body = sec.fields.map((f,i) => {
       const v = nc(sec.flat ? nota[f] : data[f]);
       return v
-        ? `<p><strong style="font-size:10px;letter-spacing:.08em;color:var(--ink-soft);font-family:var(--mono);text-transform:uppercase;">${sec.labels[i]}</strong><br/>${v}</p>`
-        : `<p class="nc">${sec.labels[i]}: No consignado</p>`;
+        ? `<p><strong style="font-size:10px;letter-spacing:.08em;color:var(--ink-soft);font-family:var(--mono);text-transform:uppercase;">${esc(sec.labels[i])}</strong><br/>${esc(v)}</p>`
+        : `<p class="nc">${esc(sec.labels[i])}: No consignado</p>`;
     }).join('');
     return `
       <section class="soap-section">
         <div class="soap-marker">
-          <div class="soap-letter" style="font-size:${sec.letter.length > 1 ? '18px':'28px'}">${sec.letter}</div>
+          <div class="soap-letter" style="font-size:${sec.letter.length > 1 ? '18px':'28px'}">${esc(sec.letter)}</div>
           <div>
-            <div class="soap-label">${sec.label}</div>
-            <div class="soap-summary">${summary}</div>
+            <div class="soap-label">${esc(sec.label)}</div>
+            <div class="soap-summary">${esc(summary)}</div>
           </div>
         </div>
         <div class="soap-body">${body}</div>
@@ -1019,7 +1025,7 @@ const renderResult = nota => {
         <summary style="cursor:pointer;font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--muted);list-style:none;">
           VER TRANSCRIPCIÓN COMPLETA
         </summary>
-        <p style="font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);line-height:1.7;margin-top:12px;white-space:pre-wrap;">${state.transcripcion}</p>
+        <p style="font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);line-height:1.7;margin-top:12px;white-space:pre-wrap;">${esc(state.transcripcion)}</p>
       </details>`;
   }
 
@@ -1028,7 +1034,7 @@ const renderResult = nota => {
     scroll.innerHTML += `
       <div style="padding:14px 0;border-top:1px solid var(--line);opacity:0;transition:opacity .55s .4s;">
         <div style="font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:var(--muted);margin-bottom:6px;">NOTAS ADICIONALES</div>
-        <p style="font-size:14px;line-height:1.55;">${nota.notas_adicionales}</p>
+        <p style="font-size:14px;line-height:1.55;">${esc(nota.notas_adicionales)}</p>
       </div>`;
   }
 
