@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://pediatra-scribe-api.lucandres.workers.dev; img-src 'self' data:; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
   <meta name="theme-color" content="#F7F4EE"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -716,7 +717,7 @@ const setRecUI = on => {
   const tag   = $('rec-tag');
   if (on) {
     title.innerHTML = 'Escuchando<br/>cada palabra.';
-    lede.textContent = 'El audio se procesa al terminar y se descarta de inmediato. Nunca se almacena.';
+    lede.textContent = 'El audio se transcribe en servidores externos (EE.UU.) y no se almacena en nuestros sistemas.';
     hint.textContent = 'TOCA PARA PAUSAR';
     tag.textContent = 'GRABANDO';
   } else {
@@ -861,7 +862,7 @@ const resumeRecording = () => {
   state.mediaRecorder.resume();
   document.body.dataset.rec = 'on';
   $('rec-title').innerHTML = 'Escuchando<br/>cada palabra.';
-  $('rec-lede').textContent = 'El audio se procesa al terminar y se descarta de inmediato. Nunca se almacena.';
+  $('rec-lede').textContent = 'El audio se transcribe en servidores externos (EE.UU.) y no se almacena en nuestros sistemas.';
   $('rec-hint').textContent = 'TOCA PARA PAUSAR';
   $('rec-tag').textContent = 'GRABANDO';
   // Reiniciar timer y visualizador (usa mismo state.timerId para que stopTimer lo limpie)
