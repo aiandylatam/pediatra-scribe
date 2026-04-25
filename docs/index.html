@@ -804,7 +804,8 @@ const startRecording = async () => {
 };
 
 const stopRecording = () => {
-  if (!state.recording || !state.mediaRecorder) return;
+  if (!state.mediaRecorder) return;
+  if (state.mediaRecorder.state === 'inactive') return;
   state.mediaRecorder.stop();
   state.mediaRecorder.stream.getTracks().forEach(t => t.stop());
   state.recording = false;
